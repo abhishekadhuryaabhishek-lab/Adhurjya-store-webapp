@@ -16,6 +16,9 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <!-- pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- TensorFlow.js + BodyPix for smart background removal -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js"></script>
 
   <style>
     :root{
@@ -447,17 +450,6 @@
       color:var(--muted);
     }
 
-    /* Signature canvas */
-    #signature-canvas{
-      width:100%;
-      max-width:600px;
-      height:220px;
-      border-radius:0.8rem;
-      border:1px dashed rgba(148,163,184,0.6);
-      background:#020617;
-      touch-action:none;
-    }
-
     /* ID photo cropper */
     .id-crop-wrapper{
       position:relative;
@@ -512,6 +504,21 @@
       background:rgba(148,163,184,0.2);
       margin:0.5rem 0;
     }
+
+    .mode-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:0.3rem;
+      padding:0.18rem 0.6rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.5);
+      background:rgba(15,23,42,0.9);
+      font-size:0.72rem;
+      cursor:pointer;
+    }
+    .mode-pill input{
+      margin:0;
+    }
   </style>
 </head>
 <body>
@@ -543,7 +550,7 @@
         <span class="hero-badge">Photo → PDF</span>
         <span class="hero-badge">PDF tools</span>
         <span class="hero-badge">OCR & utilities</span>
-        <span class="hero-badge">Signature & ID photos</span>
+        <span class="hero-badge">AI-style enhancers & ID photos</span>
       </div>
     </div>
 
@@ -575,9 +582,10 @@
       </div>
       <div class="tool-card">
         <h3>Background Remover</h3>
-        <p>Remove solid-color backgrounds using a simple smart threshold.</p>
+        <p>Remove solid-color backgrounds or smart cutout person like Picsart.</p>
         <div class="tool-tags">
-          <span class="tool-tag">Transparent PNG</span>
+          <span class="tool-tag">Solid</span>
+          <span class="tool-tag">Smart cutout</span>
         </div>
         <button class="btn" onclick="openTool('bg-remove')">Open Tool</button>
       </div>
@@ -622,24 +630,8 @@
         <button class="btn" onclick="openTool('image-format')">Open Tool</button>
       </div>
       <div class="tool-card">
-        <h3>Audio to Text (Demo)</h3>
-        <p>Mock audio transcription UI with clear client-side limitations.</p>
-        <div class="tool-tags">
-          <span class="tool-tag">Demo only</span>
-        </div>
-        <button class="btn" onclick="openTool('audio-text')">Open Tool</button>
-      </div>
-      <div class="tool-card">
-        <h3>Digital Signature Pad</h3>
-        <p>Draw your signature and download it as PNG (solid or transparent).</p>
-        <div class="tool-tags">
-          <span class="tool-tag">Signatures</span>
-        </div>
-        <button class="btn" onclick="openTool('signature')">Open Tool</button>
-      </div>
-      <div class="tool-card">
         <h3>AI Photo Enhancer</h3>
-        <p>Adjust brightness/contrast or apply “Auto Enhance”.</p>
+        <p>Brightness, contrast, saturation & sharpness with Auto Enhance.</p>
         <div class="tool-tags">
           <span class="tool-tag">Enhance</span>
         </div>
@@ -647,7 +639,7 @@
       </div>
       <div class="tool-card">
         <h3>ID Photo Maker</h3>
-        <p>Crop portrait, choose background and ID size presets.</p>
+        <p>Passport-style ID photo with background color & multi copies.</p>
         <div class="tool-tags">
           <span class="tool-tag">ID / Passport</span>
         </div>
@@ -801,8 +793,8 @@
   <section id="panel-bg-remove" class="tool-panel">
     <div class="tool-header">
       <div>
-        <h2>Background Remover (solid color)</h2>
-        <p>Remove simple solid-color backgrounds using a color-threshold algorithm.</p>
+        <h2>Background Remover</h2>
+        <p>Choose solid-color removal or AI-style smart person cutout.</p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
@@ -810,13 +802,30 @@
       <div class="field">
         <label>Select image</label>
         <input id="bg-input" type="file" accept="image/*" />
-        <small>Works best if background is mostly a single color (e.g. white wall).</small>
+        <small>Works best with clear subject. Smart mode is tuned for person photos.</small>
       </div>
+
       <div class="field">
-        <label>Threshold</label>
+        <label>Mode</label>
+        <div class="flex flex-wrap gap-sm">
+          <label class="mode-pill">
+            <input type="radio" name="bg-mode" value="solid" checked />
+            Solid color background
+          </label>
+          <label class="mode-pill">
+            <input type="radio" name="bg-mode" value="smart" />
+            Smart cutout (person)
+          </label>
+        </div>
+        <small>Smart mode runs on-device using BodyPix; first time may take few seconds to load model.</small>
+      </div>
+
+      <div class="field" id="bg-threshold-wrapper">
+        <label>Threshold (solid color mode)</label>
         <input id="bg-threshold" type="range" min="5" max="80" value="25" />
         <small>Higher value removes more pixels (may affect subject).</small>
       </div>
+
       <button class="btn mt-sm" onclick="removeBackground()">Remove Background</button>
       <div id="bg-status" class="status"></div>
       <a id="bg-download" class="download-link" href="#" style="display:none;" download="no-background.png">⬇ Download PNG</a>
@@ -856,7 +865,7 @@
           <option value="hin">Hindi (hin)</option>
           <option value="ben">Bengali (ben)</option>
         </select>
-        <small>Hindi/Bengali may need extra data and can be slower. Requires internet for language packs.</small>
+        <small>Hindi/Bengali need online language data, so internet may be required for first run.</small>
       </div>
       <button class="btn mt-sm" onclick="runOcr()">Run OCR</button>
       <div id="ocr-status" class="status"></div>
@@ -996,60 +1005,12 @@
     </div>
   </section>
 
-  <!-- 10. Audio to Text (Demo) -->
-  <section id="panel-audio-text" class="tool-panel">
-    <div class="tool-header">
-      <div>
-        <h2>Audio to Text (Demo UI)</h2>
-        <p>Explains client-side limitations. Real transcription requires a backend or third-party API.</p>
-      </div>
-      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
-    </div>
-    <div class="section">
-      <div class="badge-soft">Important: This demo does NOT run real speech-to-text in the browser.</div>
-      <div class="hint mt-xs">
-        Fully offline speech-to-text models are too heavy for typical browsers. In production, you’d send audio to a server or an API (like Whisper, Google Cloud STT, etc.).
-      </div>
-      <div class="field mt-sm">
-        <label>Upload audio (demo only)</label>
-        <input id="audio-input" type="file" accept="audio/*" />
-        <small>We only read the file info in this demo. Audio data never leaves your device.</small>
-      </div>
-      <div id="audio-status" class="status"></div>
-      <div class="section mt-md">
-        <div class="section-title">Manual transcription</div>
-        <textarea id="audio-notes" placeholder="Play your audio locally, then type your own transcription here..."></textarea>
-        <button class="btn btn-outline mt-xs" onclick="copyAudioText()">Copy Text</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 11. Signature pad -->
-  <section id="panel-signature" class="tool-panel">
-    <div class="tool-header">
-      <div>
-        <h2>Digital Signature Pad</h2>
-        <p>Draw a signature with mouse or touch and download as PNG.</p>
-      </div>
-      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
-    </div>
-    <div class="section">
-      <canvas id="signature-canvas"></canvas>
-      <div class="flex flex-wrap gap-sm mt-sm">
-        <button class="btn btn-outline" onclick="clearSignature()">Clear</button>
-        <button class="btn btn-outline" onclick="downloadSignature(false)">Download PNG (white bg)</button>
-        <button class="btn btn-outline" onclick="downloadSignature(true)">Download Transparent PNG</button>
-      </div>
-      <div class="hint mt-xs">Tip: rotate your phone horizontally for a wider signature area.</div>
-    </div>
-  </section>
-
-  <!-- 12. Photo Enhancer -->
+  <!-- 10. Photo Enhancer -->
   <section id="panel-photo-enhance" class="tool-panel">
     <div class="tool-header">
       <div>
         <h2>AI Photo Enhancer (basic)</h2>
-        <p>Adjust brightness and contrast, or use Auto Enhance for a quick boost.</p>
+        <p>Brightness, contrast, saturation & sharpness with Auto Enhance.</p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
@@ -1071,10 +1032,23 @@
         </div>
       </div>
       <div class="flex flex-wrap gap-sm mt-xs">
+        <div class="field" style="flex:1 1 130px;max-width:220px;">
+          <label>Saturation</label>
+          <input id="enhance-sat" type="range" min="-80" max="80" value="0" />
+          <small><span id="enhance-sat-label">0</span></small>
+        </div>
+        <div class="field" style="flex:1 1 130px;max-width:220px;">
+          <label>Sharpness</label>
+          <input id="enhance-sharp" type="range" min="0" max="100" value="20" />
+          <small><span id="enhance-sharp-label">20</span></small>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
         <button class="btn btn-outline" onclick="applyEnhance()">Apply</button>
         <button class="btn btn-outline" onclick="autoEnhance()">Auto Enhance</button>
       </div>
       <a id="enhance-download" class="download-link" href="#" style="display:none;" download="enhanced.png">⬇ Download enhanced image</a>
+      <div class="hint mt-xs">Note: very large images may be slower to process in browser.</div>
       <div class="divider"></div>
       <div class="section-title">Preview</div>
       <div class="preview-row">
@@ -1090,12 +1064,12 @@
     </div>
   </section>
 
-  <!-- 13. ID Photo Maker -->
+  <!-- 11. ID Photo Maker -->
   <section id="panel-id-photo" class="tool-panel">
     <div class="tool-header">
       <div>
         <h2>ID Photo Maker</h2>
-        <p>Crop a portrait and generate ID photos with solid backgrounds.</p>
+        <p>Crop a portrait and generate passport-style ID photos with multiple copies.</p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
@@ -1106,7 +1080,7 @@
       </div>
       <div class="flex flex-wrap gap-sm mt-xs">
         <div class="field" style="flex:1 1 150px;max-width:220px;">
-          <label>Preset size</label>
+          <label>Preset size (single ID)</label>
           <select id="id-preset">
             <!-- These sizes are approximations in pixels at screen resolution -->
             <option value="295x413">Passport (~35×49 mm → 295×413 px)</option>
@@ -1124,13 +1098,25 @@
           </select>
         </div>
       </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Copies layout</label>
+          <div class="flex gap-xs">
+            <input id="id-cols" type="number" min="1" max="5" value="3" style="max-width:60px;" />
+            <span style="align-self:center;font-size:0.78rem;">per row</span>
+            <input id="id-rows" type="number" min="1" max="6" value="4" style="max-width:60px;margin-left:0.4rem;" />
+            <span style="align-self:center;font-size:0.78rem;">rows</span>
+          </div>
+          <small>Sheet will contain cols × rows ID copies.</small>
+        </div>
+      </div>
       <div id="id-crop-container" class="id-crop-wrapper mt-sm" style="display:none;">
         <img id="id-img" class="id-crop-img" alt="" />
         <div id="id-crop-rect" class="crop-rect"></div>
       </div>
-      <button class="btn mt-sm" onclick="generateIdPhoto()">Generate ID Photo</button>
+      <button class="btn mt-sm" onclick="generateIdPhoto()">Generate ID Photo Sheet</button>
       <div id="id-status" class="status"></div>
-      <a id="id-download" class="download-link" href="#" style="display:none;" download="id-photo.png">⬇ Download ID photo</a>
+      <a id="id-download" class="download-link" href="#" style="display:none;" download="id-photos.png">⬇ Download ID photos sheet</a>
     </div>
   </section>
 </main>
@@ -1449,10 +1435,26 @@
   const bgCanvas=document.getElementById('bg-canvas');
   const bgCtx=bgCanvas.getContext('2d');
 
+  let bodyPixModel=null;
+  async function loadBodyPixModel(){
+    if(bodyPixModel) return bodyPixModel;
+    const status=document.getElementById('bg-status');
+    status.textContent='Loading AI model for smart background removal (first time may take 5–15 seconds)...';
+    status.className='status';
+    bodyPixModel = await bodyPix.load({
+      architecture:'MobileNetV1',
+      outputStride:16,
+      multiplier:0.75,
+      quantBytes:2
+    });
+    return bodyPixModel;
+  }
+
   document.getElementById('bg-input').addEventListener('change', async (e)=>{
     const file=e.target.files[0];
     const prev=document.getElementById('bg-original-preview');
     const status=document.getElementById('bg-status');
+    document.getElementById('bg-download').style.display='none';
     if(!file){prev.src='';status.textContent='';return;}
     try{
       bgImageFile=file;
@@ -1461,7 +1463,7 @@
       bgCanvas.width=img.width;
       bgCanvas.height=img.height;
       bgCtx.drawImage(img,0,0,img.width,img.height);
-      status.textContent='Image loaded. Adjust threshold and click "Remove Background".';
+      status.textContent='Image loaded. Choose mode and click "Remove Background".';
       status.className='status';
     }catch(err){
       console.error(err);
@@ -1470,7 +1472,28 @@
     }
   });
 
+  document.querySelectorAll('input[name="bg-mode"]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const mode=document.querySelector('input[name="bg-mode"]:checked').value;
+      const wrapper=document.getElementById('bg-threshold-wrapper');
+      if(mode==='solid'){
+        wrapper.style.display='flex';
+      }else{
+        wrapper.style.display='none';
+      }
+    });
+  });
+
   async function removeBackground(){
+    const mode=document.querySelector('input[name="bg-mode"]:checked').value;
+    if(mode==='solid'){
+      await removeBackgroundSolid();
+    }else{
+      await removeBackgroundSmart();
+    }
+  }
+
+  async function removeBackgroundSolid(){
     const status=document.getElementById('bg-status');
     const link=document.getElementById('bg-download');
     link.style.display='none';
@@ -1480,7 +1503,7 @@
       return;
     }
     try{
-      status.textContent='Processing...';
+      status.textContent='Processing (solid color)...';
       status.className='status';
       const threshold = parseInt(document.getElementById('bg-threshold').value)||25;
       const imgData = bgCtx.getImageData(0,0,bgCanvas.width,bgCanvas.height);
@@ -1501,11 +1524,53 @@
       const url=URL.createObjectURL(blob);
       link.href=url;
       link.style.display='inline-flex';
-      status.textContent='Done. Download transparent PNG.';
+      status.textContent='Done. Download transparent PNG (solid background removed).';
       status.className='status success';
     }catch(err){
       console.error(err);
       status.textContent='Background removal failed (image may be too large).';
+      status.className='status error';
+    }
+  }
+
+  async function removeBackgroundSmart(){
+    const status=document.getElementById('bg-status');
+    const link=document.getElementById('bg-download');
+    link.style.display='none';
+    if(!bgImageFile){
+      status.textContent='Please select an image first.';
+      status.className='status error';
+      return;
+    }
+    try{
+      status.textContent='Running smart person cutout...';
+      status.className='status';
+      const model=await loadBodyPixModel();
+      const segmentation=await model.segmentPerson(bgCanvas,{
+        internalResolution:'medium',
+        segmentationThreshold:0.7
+      });
+      const {data:segData}=segmentation;
+      const imgData=bgCtx.getImageData(0,0,bgCanvas.width,bgCanvas.height);
+      const pix=imgData.data;
+      for(let i=0;i<segData.length;i++){
+        const isPerson = segData[i]===1;
+        const idx=i*4;
+        if(!isPerson){
+          pix[idx+3]=0; // make transparent
+        }
+      }
+      bgCtx.putImageData(imgData,0,0);
+      const dataURL=bgCanvas.toDataURL('image/png');
+      const blob=blobFromDataURL(dataURL);
+      const url=URL.createObjectURL(blob);
+      link.href=url;
+      link.style.display='inline-flex';
+      status.textContent='Smart cutout complete. Person kept, background removed.';
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Smart background removal failed. Try with a simpler portrait photo.';
       status.className='status error';
     }
   }
@@ -1527,7 +1592,7 @@
       status.className='status error';
       return;
     }
-    status.textContent='Loading Tesseract and starting OCR...';
+    status.textContent='Loading OCR engine and starting recognition...';
     status.className='status';
     try{
       bar.style.display='block';
@@ -1540,11 +1605,11 @@
         }
       });
       out.value=result.data.text || '';
-      status.textContent='OCR finished.';
+      status.textContent='OCR finished. Check and edit if needed.';
       status.className='status success';
     }catch(err){
       console.error(err);
-      status.textContent='OCR failed. Check console/logs or try with a smaller image.';
+      status.textContent='OCR failed. Try a clearer image, or check that language data is available.';
       status.className='status error';
       bar.style.display='none';
     }
@@ -1823,110 +1888,7 @@
     }
   }
 
-  // ---------- 10. AUDIO TO TEXT DEMO ----------
-  document.getElementById('audio-input').addEventListener('change',(e)=>{
-    const file=e.target.files[0];
-    const status=document.getElementById('audio-status');
-    if(!file){status.textContent='';return;}
-    status.textContent=`Selected: ${file.name} (${bytesToKB(file.size)} KB). This demo does NOT transcribe audio.`;
-    status.className='status';
-  });
-  async function copyAudioText(){
-    const txt=document.getElementById('audio-notes').value;
-    if(!txt){alert('No text to copy.');return;}
-    try{
-      await navigator.clipboard.writeText(txt);
-      alert('Copied to clipboard.');
-    }catch{
-      alert('Could not copy automatically. Please copy manually.');
-    }
-  }
-
-  // ---------- 11. SIGNATURE PAD ----------
-  const sigCanvas=document.getElementById('signature-canvas');
-  const sigCtx=sigCanvas.getContext('2d');
-  let isDrawing=false;
-  let lastX=0,lastY=0;
-
-  function resizeSignatureCanvas(){
-    const rect=sigCanvas.getBoundingClientRect();
-    const dpr=window.devicePixelRatio||1;
-    sigCanvas.width=rect.width*dpr;
-    sigCanvas.height=rect.height*dpr;
-    sigCtx.scale(dpr,dpr);
-    sigCtx.lineCap='round';
-    sigCtx.lineJoin='round';
-    sigCtx.lineWidth=2.2;
-    sigCtx.strokeStyle='#e5e7eb';
-  }
-  function getSigPos(e){
-    const rect=sigCanvas.getBoundingClientRect();
-    if(e.touches && e.touches[0]){
-      return{
-        x:e.touches[0].clientX-rect.left,
-        y:e.touches[0].clientY-rect.top
-      };
-    }
-    return{
-      x:e.clientX-rect.left,
-      y:e.clientY-rect.top
-    };
-  }
-  function startSig(e){
-    e.preventDefault();
-    isDrawing=true;
-    const pos=getSigPos(e);
-    lastX=pos.x;lastY=pos.y;
-  }
-  function moveSig(e){
-    if(!isDrawing)return;
-    e.preventDefault();
-    const pos=getSigPos(e);
-    sigCtx.beginPath();
-    sigCtx.moveTo(lastX,lastY);
-    sigCtx.lineTo(pos.x,pos.y);
-    sigCtx.stroke();
-    lastX=pos.x;lastY=pos.y;
-  }
-  function endSig(e){
-    if(!isDrawing)return;
-    e.preventDefault();
-    isDrawing=false;
-  }
-  function clearSignature(){
-    const rect=sigCanvas.getBoundingClientRect();
-    sigCtx.clearRect(0,0,rect.width,rect.height);
-  }
-  function downloadSignature(transparent){
-    const rect=sigCanvas.getBoundingClientRect();
-    const dpr=window.devicePixelRatio||1;
-    const temp=document.createElement('canvas');
-    temp.width=rect.width*dpr;
-    temp.height=rect.height*dpr;
-    const tctx=temp.getContext('2d');
-    tctx.scale(dpr,dpr);
-    if(!transparent){
-      tctx.fillStyle='#ffffff';
-      tctx.fillRect(0,0,rect.width,rect.height);
-    }
-    tctx.drawImage(sigCanvas,0,0,rect.width,rect.height);
-    temp.toBlob(blob=>{
-      if(!blob)return;
-      downloadBlob(blob, transparent?'signature-transparent.png':'signature.png');
-    },'image/png');
-  }
-
-  sigCanvas.addEventListener('mousedown',startSig);
-  sigCanvas.addEventListener('mousemove',moveSig);
-  sigCanvas.addEventListener('mouseup',endSig);
-  sigCanvas.addEventListener('mouseleave',endSig);
-  sigCanvas.addEventListener('touchstart',startSig,{passive:false});
-  sigCanvas.addEventListener('touchmove',moveSig,{passive:false});
-  sigCanvas.addEventListener('touchend',endSig);
-
-  window.addEventListener('load',resizeSignatureCanvas);
-
-  // ---------- 12. PHOTO ENHANCER ----------
+  // ---------- 10. PHOTO ENHANCER ----------
   let enhanceImg=null;
   const enhanceCanvas=document.getElementById('enhance-canvas');
   const enhanceCtx=enhanceCanvas.getContext('2d');
@@ -1937,6 +1899,13 @@
   document.getElementById('enhance-contrast').addEventListener('input',(e)=>{
     document.getElementById('enhance-contrast-label').textContent=e.target.value;
   });
+  document.getElementById('enhance-sat').addEventListener('input',(e)=>{
+    document.getElementById('enhance-sat-label').textContent=e.target.value;
+  });
+  document.getElementById('enhance-sharp').addEventListener('input',(e)=>{
+    document.getElementById('enhance-sharp-label').textContent=e.target.value;
+  });
+
   document.getElementById('enhance-input').addEventListener('change', async (e)=>{
     const file=e.target.files[0];
     const original=document.getElementById('enhance-original');
@@ -1955,24 +1924,81 @@
     if(!enhanceImg){alert('Select an image first.');return;}
     const bright=parseInt(document.getElementById('enhance-bright').value)||0;
     const contrast=parseInt(document.getElementById('enhance-contrast').value)||0;
+    const satVal=parseInt(document.getElementById('enhance-sat').value)||0;
+    const sharpVal=parseInt(document.getElementById('enhance-sharp').value)||0;
+
     enhanceCanvas.width=enhanceImg.width;
     enhanceCanvas.height=enhanceImg.height;
     enhanceCtx.drawImage(enhanceImg,0,0);
     const imgData=enhanceCtx.getImageData(0,0,enhanceCanvas.width,enhanceCanvas.height);
-    const data=imgData.data;
-    const b = bright; // -100..100
-    const c = (contrast/100)+1; // factor
+    let data=imgData.data;
+    const b = bright;
+    const c = (contrast/100)+1;
     const intercept = 128*(1-c);
+    const sFactor = satVal/100;
+
+    // Brightness + contrast + saturation
     for(let i=0;i<data.length;i+=4){
-      data[i] = c*data[i]+intercept + b;
-      data[i+1] = c*data[i+1]+intercept + b;
-      data[i+2] = c*data[i+2]+intercept + b;
+      let r=data[i], g=data[i+1], bch=data[i+2];
+
+      // brightness + contrast
+      r = c*r+intercept + b;
+      g = c*g+intercept + b;
+      bch = c*bch+intercept + b;
+
+      // saturation
+      const grey = 0.299*r+0.587*g+0.114*bch;
+      r = grey + (r-grey)*(1+sFactor);
+      g = grey + (g-grey)*(1+sFactor);
+      bch = grey + (bch-grey)*(1+sFactor);
+
+      data[i] = r;
+      data[i+1] = g;
+      data[i+2] = bch;
     }
+
+    // Clamp
     for(let i=0;i<data.length;i+=4){
       data[i]=Math.max(0,Math.min(255,data[i]));
       data[i+1]=Math.max(0,Math.min(255,data[i+1]));
       data[i+2]=Math.max(0,Math.min(255,data[i+2]));
     }
+
+    // Sharpness (simple 3x3 kernel)
+    if(sharpVal>0){
+      const amount = sharpVal/50; // 0..2 approx
+      const w=enhanceCanvas.width;
+      const h=enhanceCanvas.height;
+      const src = new Uint8ClampedArray(data);
+      const idx = (x,y)=> (y*w+x)*4;
+      const k = [0,-1,0,-1,5, -1,0,-1,0]; // simple sharpen
+      for(let y=1;y<h-1;y++){
+        for(let x=1;x<w-1;x++){
+          let r=0,g=0,b2=0;
+          let ki=0;
+          for(let ky=-1;ky<=1;ky++){
+            for(let kx=-1;kx<=1;kx++){
+              const i4 = idx(x+kx,y+ky);
+              const wght = k[ki++];
+              r += src[i4]*wght;
+              g += src[i4+1]*wght;
+              b2 += src[i4+2]*wght;
+            }
+          }
+          const i4c=idx(x,y);
+          data[i4c] = data[i4c]*(1-amount) + r*amount;
+          data[i4c+1] = data[i4c+1]*(1-amount) + g*amount;
+          data[i4c+2] = data[i4c+2]*(1-amount) + b2*amount;
+        }
+      }
+      // final clamp
+      for(let i=0;i<data.length;i+=4){
+        data[i]=Math.max(0,Math.min(255,data[i]));
+        data[i+1]=Math.max(0,Math.min(255,data[i+1]));
+        data[i+2]=Math.max(0,Math.min(255,data[i+2]));
+      }
+    }
+
     enhanceCtx.putImageData(imgData,0,0);
     enhanceCanvas.toBlob(blob=>{
       if(!blob)return;
@@ -1982,15 +2008,21 @@
       link.style.display='inline-flex';
     },'image/png');
   }
+
   function autoEnhance(){
+    // Simple auto preset: little brightness, contrast, saturation, sharpness
     document.getElementById('enhance-bright').value=10;
     document.getElementById('enhance-contrast').value=20;
+    document.getElementById('enhance-sat').value=15;
+    document.getElementById('enhance-sharp').value=30;
     document.getElementById('enhance-bright-label').textContent='10';
     document.getElementById('enhance-contrast-label').textContent='20';
+    document.getElementById('enhance-sat-label').textContent='15';
+    document.getElementById('enhance-sharp-label').textContent='30';
     applyEnhance();
   }
 
-  // ---------- 13. ID PHOTO MAKER ----------
+  // ---------- 11. ID PHOTO MAKER ----------
   let idImg=null;
   let idScale=1;
   let crop = {x:0,y:0,w:0,h:0};
@@ -2011,7 +2043,7 @@
       idImg=await loadImageFromDataURL(url);
       idImgEl.src=url;
       idContainer.style.display='block';
-      status.textContent='Image loaded. Adjust crop box over your face.';
+      status.textContent='Image loaded. Adjust crop box over the face.';
       status.className='status';
       setTimeout(initIdCrop,50);
     }catch(err){
@@ -2107,6 +2139,16 @@
     const preset=document.getElementById('id-preset').value.split('x');
     const pw=parseInt(preset[0]),ph=parseInt(preset[1]);
     const bg=document.getElementById('id-bg').value;
+    let cols=parseInt(document.getElementById('id-cols').value)||1;
+    let rows=parseInt(document.getElementById('id-rows').value)||1;
+    cols=Math.min(Math.max(cols,1),5);
+    rows=Math.min(Math.max(rows,1),6);
+    const maxCopies=40;
+    let copies=cols*rows;
+    if(copies>maxCopies){
+      copies=maxCopies;
+    }
+
     const contRect=idContainer.getBoundingClientRect();
     const imgRect=idImgEl.getBoundingClientRect();
     const relX=crop.x - (imgRect.left-contRect.left);
@@ -2116,23 +2158,44 @@
     const srcW=crop.w*idScale;
     const srcH=crop.h*idScale;
 
+    const margin=20;
+    const gap=20;
+    const sheetW = pw*cols + margin*2 + gap*(cols-1);
+    const sheetH = ph*rows + margin*2 + gap*(rows-1);
+
     try{
       const canvas=document.createElement('canvas');
-      canvas.width=pw;canvas.height=ph;
+      canvas.width=sheetW;canvas.height=sheetH;
       const ctx=canvas.getContext('2d');
-      ctx.fillStyle=bg;
-      ctx.fillRect(0,0,pw,ph);
-      ctx.drawImage(idImg,srcX,srcY,srcW,srcH,0,0,pw,ph);
+
+      // sheet background white
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,sheetW,sheetH);
+
+      let placed=0;
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          if(placed>=copies) break;
+          const x = margin + c*(pw+gap);
+          const y = margin + r*(ph+gap);
+          // per-ID background color
+          ctx.fillStyle=bg;
+          ctx.fillRect(x,y,pw,ph);
+          ctx.drawImage(idImg,srcX,srcY,srcW,srcH,x,y,pw,ph);
+          placed++;
+        }
+      }
+
       canvas.toBlob(blob=>{
         if(!blob){
-          status.textContent='Could not build ID photo.';
+          status.textContent='Could not build ID photo sheet.';
           status.className='status error';
           return;
         }
         const url=URL.createObjectURL(blob);
         link.href=url;
         link.style.display='inline-flex';
-        status.textContent='ID photo ready. Download below.';
+        status.textContent='ID photo sheet ready. Download below and print.';
         status.className='status success';
       },'image/png');
     }catch(err){
@@ -2146,7 +2209,6 @@
   document.getElementById('id-preset').addEventListener('change',()=>{
     if(idImg){initIdCrop();}
   });
-
 </script>
 </body>
 </html>
