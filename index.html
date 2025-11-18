@@ -794,15 +794,16 @@
     <div class="tool-header">
       <div>
         <h2>Background Remover</h2>
-        <p>Choose solid-color removal or AI-style smart person cutout.</p>
+        <p>Solid-color remove + AI person cutout (remove.bg style).</p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
+
     <div class="section">
       <div class="field">
         <label>Select image</label>
         <input id="bg-input" type="file" accept="image/*" />
-        <small>Works best with clear subject. Smart mode is tuned for person photos.</small>
+        <small>Best result with clear subject on simple background.</small>
       </div>
 
       <div class="field">
@@ -810,25 +811,46 @@
         <div class="flex flex-wrap gap-sm">
           <label class="mode-pill">
             <input type="radio" name="bg-mode" value="solid" checked />
-            Solid color background
+            Solid color remover
           </label>
           <label class="mode-pill">
             <input type="radio" name="bg-mode" value="smart" />
-            Smart cutout (person)
+            Smart AI cutout (person)
           </label>
         </div>
-        <small>Smart mode runs on-device using BodyPix; first time may take few seconds to load model.</small>
+        <small>Smart mode runs BodyPix model in your browser (first time 5–15s).</small>
       </div>
 
-      <div class="field" id="bg-threshold-wrapper">
-        <label>Threshold (solid color mode)</label>
+      <!-- Solid color options -->
+      <div class="field" id="bg-threshold-wrapper" style="flex-direction:column;">
+        <label>Threshold (solid color)</label>
         <input id="bg-threshold" type="range" min="5" max="80" value="25" />
-        <small>Higher value removes more pixels (may affect subject).</small>
+        <small>Higher = removes more background (careful: can eat into subject).</small>
+      </div>
+
+      <!-- Smart AI options -->
+      <div class="field" id="bg-smart-options" style="display:none;flex-direction:column;gap:0.3rem;">
+        <label>Output background (smart mode)</label>
+        <div class="flex flex-wrap gap-sm">
+          <label class="mode-pill">
+            <input type="radio" name="smart-bg" value="transparent" checked />
+            Transparent PNG
+          </label>
+          <label class="mode-pill">
+            <input type="radio" name="smart-bg" value="color" />
+            Solid color
+          </label>
+          <input type="color" id="bg-smart-color" value="#ffffff" style="width:46px;height:26px;border-radius:999px;border:1px solid #4b5563;background:#020617;" />
+        </div>
+        <small>Keep subject, replace background with transparent or custom color.</small>
       </div>
 
       <button class="btn mt-sm" onclick="removeBackground()">Remove Background</button>
       <div id="bg-status" class="status"></div>
-      <a id="bg-download" class="download-link" href="#" style="display:none;" download="no-background.png">⬇ Download PNG</a>
+      <a id="bg-download" class="download-link" href="#" style="display:none;" download="no-background.png">
+        ⬇ Download PNG
+      </a>
+
       <div class="divider"></div>
       <div class="section-title">Preview</div>
       <div class="preview-row">
@@ -837,10 +859,48 @@
           <img id="bg-original-preview" class="preview-img mt-xs" alt="" />
         </div>
         <div style="flex:1;">
-          <div class="pill-small">Background removed</div>
+          <div class="pill-small">Background removed (brush editable)</div>
           <canvas id="bg-canvas" class="preview-img mt-xs"></canvas>
         </div>
       </div>
+    </div>
+
+    <div class="section mt-sm">
+      <div class="section-title">Manual fix (brush)</div>
+
+      <div class="field">
+        <label>Brush size</label>
+        <input
+          id="bg-brush-size"
+          type="range"
+          min="5"
+          max="80"
+          value="25"
+          oninput="setBgBrushSize(this.value)"
+        />
+      </div>
+
+      <div class="flex flex-wrap gap-sm">
+        <button
+          type="button"
+          class="btn btn-outline"
+          onclick="setBgBrushMode('erase')"
+        >
+          Erase background
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline"
+          onclick="setBgBrushMode('restore')"
+        >
+          Restore subject
+        </button>
+      </div>
+
+      <small class="hint">
+        Tip: First run “Remove Background”, then use the brush on the preview
+        canvas to erase/restore edges.
+      </small>
     </div>
   </section>
 
@@ -1082,7 +1142,6 @@
         <div class="field" style="flex:1 1 150px;max-width:220px;">
           <label>Preset size (single ID)</label>
           <select id="id-preset">
-            <!-- These sizes are approximations in pixels at screen resolution -->
             <option value="295x413">Passport (~35×49 mm → 295×413 px)</option>
             <option value="600x600">2×2 inch (~300 DPI → 600×600 px)</option>
             <option value="413x531">Visa (~413×531 px)</option>
@@ -1227,7 +1286,6 @@
       actions.appendChild(up);actions.appendChild(down);actions.appendChild(del);
       item.appendChild(imgEl);item.appendChild(meta);item.appendChild(actions);
       listEl.appendChild(item);
-      // thumbnail
       readFileAsDataURL(file).then(url=>{imgEl.src=url;}).catch(()=>{});
     });
   }
@@ -1431,149 +1489,304 @@
   }
 
   // ---------- 4. BACKGROUND REMOVER ----------
-  let bgImageFile=null;
-  const bgCanvas=document.getElementById('bg-canvas');
-  const bgCtx=bgCanvas.getContext('2d');
+  let bgImageFile = null;
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx = bgCanvas.getContext('2d');
 
-  let bodyPixModel=null;
-  async function loadBodyPixModel(){
-    if(bodyPixModel) return bodyPixModel;
-    const status=document.getElementById('bg-status');
-    status.textContent='Loading AI model for smart background removal (first time may take 5–15 seconds)...';
-    status.className='status';
+  let bgOriginalImageData = null;
+  let bgBrushMode = 'erase';
+  let bgBrushSize = 25;
+  let bgIsDrawing = false;
+
+  let bodyPixModel = null;
+  async function loadBodyPixModel() {
+    if (bodyPixModel) return bodyPixModel;
+    const status = document.getElementById('bg-status');
+    status.textContent = 'Loading AI model for smart background removal (first time 5–15s)...';
+    status.className = 'status';
     bodyPixModel = await bodyPix.load({
-      architecture:'MobileNetV1',
-      outputStride:16,
-      multiplier:0.75,
-      quantBytes:2
+      architecture: 'MobileNetV1',
+      outputStride: 16,
+      multiplier: 0.75,
+      quantBytes: 2
     });
     return bodyPixModel;
   }
 
-  document.getElementById('bg-input').addEventListener('change', async (e)=>{
-    const file=e.target.files[0];
-    const prev=document.getElementById('bg-original-preview');
-    const status=document.getElementById('bg-status');
-    document.getElementById('bg-download').style.display='none';
-    if(!file){prev.src='';status.textContent='';return;}
-    try{
-      bgImageFile=file;
-      const img=await loadImageFromFile(file);
-      prev.src=await readFileAsDataURL(file);
-      bgCanvas.width=img.width;
-      bgCanvas.height=img.height;
-      bgCtx.drawImage(img,0,0,img.width,img.height);
-      status.textContent='Image loaded. Choose mode and click "Remove Background".';
-      status.className='status';
-    }catch(err){
+  document.getElementById('bg-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const prev = document.getElementById('bg-original-preview');
+    const status = document.getElementById('bg-status');
+    document.getElementById('bg-download').style.display = 'none';
+    if (!file) {
+      prev.src = '';
+      status.textContent = '';
+      return;
+    }
+    try {
+      bgImageFile = file;
+      const img = await loadImageFromFile(file);
+      prev.src = await readFileAsDataURL(file);
+
+      bgCanvas.width = img.width;
+      bgCanvas.height = img.height;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      bgCtx.drawImage(img, 0, 0, img.width, img.height);
+
+      bgOriginalImageData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+
+      status.textContent = 'Image loaded. Choose mode and click "Remove Background".';
+      status.className = 'status';
+    } catch (err) {
       console.error(err);
-      status.textContent='Could not load image.';
-      status.className='status error';
+      status.textContent = 'Could not load image.';
+      status.className = 'status error';
     }
   });
 
-  document.querySelectorAll('input[name="bg-mode"]').forEach(el=>{
-    el.addEventListener('change',()=>{
-      const mode=document.querySelector('input[name="bg-mode"]:checked').value;
-      const wrapper=document.getElementById('bg-threshold-wrapper');
-      if(mode==='solid'){
-        wrapper.style.display='flex';
-      }else{
-        wrapper.style.display='none';
+  document.querySelectorAll('input[name="bg-mode"]').forEach(el => {
+    el.addEventListener('change', () => {
+      const mode = document.querySelector('input[name="bg-mode"]:checked').value;
+      const solidWrapper = document.getElementById('bg-threshold-wrapper');
+      const smartWrapper = document.getElementById('bg-smart-options');
+      if (mode === 'solid') {
+        solidWrapper.style.display = 'flex';
+        smartWrapper.style.display = 'none';
+      } else {
+        solidWrapper.style.display = 'none';
+        smartWrapper.style.display = 'flex';
       }
     });
   });
 
-  async function removeBackground(){
-    const mode=document.querySelector('input[name="bg-mode"]:checked').value;
-    if(mode==='solid'){
+  function hexToRgb(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) {
+      h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    }
+    const num = parseInt(h, 16);
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255
+    };
+  }
+
+  async function removeBackground() {
+    const mode = document.querySelector('input[name="bg-mode"]:checked').value;
+    if (mode === 'solid') {
       await removeBackgroundSolid();
-    }else{
+    } else {
       await removeBackgroundSmart();
     }
+
+    if (bgCanvas.width && bgCanvas.height && !bgOriginalImageData) {
+      bgOriginalImageData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+    }
   }
 
-  async function removeBackgroundSolid(){
-    const status=document.getElementById('bg-status');
-    const link=document.getElementById('bg-download');
-    link.style.display='none';
-    if(!bgImageFile){
-      status.textContent='Please select an image first.';
-      status.className='status error';
+  async function removeBackgroundSolid() {
+    const status = document.getElementById('bg-status');
+    const link = document.getElementById('bg-download');
+    link.style.display = 'none';
+    if (!bgImageFile) {
+      status.textContent = 'Please select an image first.';
+      status.className = 'status error';
       return;
     }
-    try{
-      status.textContent='Processing (solid color)...';
-      status.className='status';
-      const threshold = parseInt(document.getElementById('bg-threshold').value)||25;
-      const imgData = bgCtx.getImageData(0,0,bgCanvas.width,bgCanvas.height);
-      const data=imgData.data;
-      const r0=data[0],g0=data[1],b0=data[2];
-      const t = threshold*3;
-      for(let i=0;i<data.length;i+=4){
-        const dr=Math.abs(data[i]-r0);
-        const dg=Math.abs(data[i+1]-g0);
-        const db=Math.abs(data[i+2]-b0);
-        if(dr+dg+db<t){
-          data[i+3]=0;
-        }
+    try {
+      status.textContent = 'Processing solid background...';
+      status.className = 'status';
+      const threshold = parseInt(document.getElementById('bg-threshold').value) || 25;
+      const imgData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+      const data = imgData.data;
+      const r0 = data[0], g0 = data[1], b0 = data[2];
+      const t = threshold * 3;
+      for (let i = 0; i < data.length; i += 4) {
+        const dr = Math.abs(data[i] - r0);
+        const dg = Math.abs(data[i + 1] - g0);
+        const db = Math.abs(data[i + 2] - b0);
+        if (dr + dg + db < t) data[i + 3] = 0;
       }
-      bgCtx.putImageData(imgData,0,0);
-      const dataURL=bgCanvas.toDataURL('image/png');
-      const blob=blobFromDataURL(dataURL);
-      const url=URL.createObjectURL(blob);
-      link.href=url;
-      link.style.display='inline-flex';
-      status.textContent='Done. Download transparent PNG (solid background removed).';
-      status.className='status success';
-    }catch(err){
+      bgCtx.putImageData(imgData, 0, 0);
+
+      const dataURL = bgCanvas.toDataURL('image/png');
+      const blob = blobFromDataURL(dataURL);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.style.display = 'inline-flex';
+      status.textContent = 'Done. Solid background removed (transparent PNG).';
+      status.className = 'status success';
+    } catch (err) {
       console.error(err);
-      status.textContent='Background removal failed (image may be too large).';
-      status.className='status error';
+      status.textContent = 'Background removal failed (maybe image too large).';
+      status.className = 'status error';
     }
   }
 
-  async function removeBackgroundSmart(){
-    const status=document.getElementById('bg-status');
-    const link=document.getElementById('bg-download');
-    link.style.display='none';
-    if(!bgImageFile){
-      status.textContent='Please select an image first.';
-      status.className='status error';
+  async function removeBackgroundSmart() {
+    const status = document.getElementById('bg-status');
+    const link = document.getElementById('bg-download');
+    link.style.display = 'none';
+    if (!bgImageFile) {
+      status.textContent = 'Please select an image first.';
+      status.className = 'status error';
       return;
     }
-    try{
-      status.textContent='Running smart person cutout...';
-      status.className='status';
-      const model=await loadBodyPixModel();
-      const segmentation=await model.segmentPerson(bgCanvas,{
-        internalResolution:'medium',
-        segmentationThreshold:0.7
+    try {
+      status.textContent = 'Running AI smart cutout...';
+      status.className = 'status';
+
+      const model = await loadBodyPixModel();
+      const segmentation = await model.segmentPerson(bgCanvas, {
+        internalResolution: 'high',
+        segmentationThreshold: 0.95
       });
-      const {data:segData}=segmentation;
-      const imgData=bgCtx.getImageData(0,0,bgCanvas.width,bgCanvas.height);
-      const pix=imgData.data;
-      for(let i=0;i<segData.length;i++){
-        const isPerson = segData[i]===1;
-        const idx=i*4;
-        if(!isPerson){
-          pix[idx+3]=0; // make transparent
+
+      const { data: segData, width: segW, height: segH } = segmentation;
+
+      const mask = new Uint8Array(segData.length);
+      for (let i = 0; i < segData.length; i++) {
+        mask[i] = segData[i] === 1 ? 1 : 0;
+      }
+
+      const cleaned = new Uint8Array(mask.length);
+      const idx = (x, y) => y * segW + x;
+      for (let y = 1; y < segH - 1; y++) {
+        for (let x = 1; x < segW - 1; x++) {
+          let sum = 0;
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              sum += mask[idx(x + kx, y + ky)];
+            }
+          }
+          cleaned[idx(x, y)] = sum >= 5 ? 1 : 0;
         }
       }
-      bgCtx.putImageData(imgData,0,0);
-      const dataURL=bgCanvas.toDataURL('image/png');
-      const blob=blobFromDataURL(dataURL);
-      const url=URL.createObjectURL(blob);
-      link.href=url;
-      link.style.display='inline-flex';
-      status.textContent='Smart cutout complete. Person kept, background removed.';
-      status.className='status success';
-    }catch(err){
+
+      const imgData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+      const pix = imgData.data;
+      const cW = bgCanvas.width;
+      const cH = bgCanvas.height;
+
+      const smartBgMode = document.querySelector('input[name="smart-bg"]:checked').value;
+      const colorHex = document.getElementById('bg-smart-color').value || '#ffffff';
+      const bgColor = hexToRgb(colorHex);
+
+      for (let y = 0; y < cH; y++) {
+        const sy = Math.floor((y * segH) / cH);
+        for (let x = 0; x < cW; x++) {
+          const sx = Math.floor((x * segW) / cW);
+          const sIndex = sy * segW + sx;
+          const isPerson = cleaned[sIndex] === 1;
+          const i = (y * cW + x) * 4;
+          if (!isPerson) {
+            if (smartBgMode === 'transparent') {
+              pix[i + 3] = 0;
+            } else {
+              pix[i] = bgColor.r;
+              pix[i + 1] = bgColor.g;
+              pix[i + 2] = bgColor.b;
+              pix[i + 3] = 255;
+            }
+          }
+        }
+      }
+
+      bgCtx.putImageData(imgData, 0, 0);
+
+      const dataURL = bgCanvas.toDataURL('image/png');
+      const blob = blobFromDataURL(dataURL);
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.style.display = 'inline-flex';
+
+      status.textContent =
+        smartBgMode === 'transparent'
+          ? 'Smart cutout complete. Person kept, background transparent. You can refine with the brush.'
+          : 'Smart cutout complete. Person kept, solid background applied. You can refine with the brush.';
+      status.className = 'status success';
+    } catch (err) {
       console.error(err);
-      status.textContent='Smart background removal failed. Try with a simpler portrait photo.';
-      status.className='status error';
+      status.textContent = 'Smart background removal failed. Try a clearer portrait or smaller image.';
+      status.className = 'status error';
     }
   }
+
+  // Brush UI helpers
+  function setBgBrushMode(mode) {
+    bgBrushMode = mode;
+  }
+  function setBgBrushSize(val) {
+    bgBrushSize = parseInt(val) || 20;
+  }
+
+  function bgGetCanvasPos(e) {
+    const rect = bgCanvas.getBoundingClientRect();
+    const touch = e.touches && e.touches[0];
+    const clientX = touch ? touch.clientX : e.clientX;
+    const clientY = touch ? touch.clientY : e.clientY;
+    const x = (clientX - rect.left) * (bgCanvas.width / rect.width);
+    const y = (clientY - rect.top) * (bgCanvas.height / rect.height);
+    return { x, y };
+  }
+
+  function bgStartDraw(e) {
+    if (!bgCanvas.width || !bgOriginalImageData) return;
+    bgIsDrawing = true;
+    bgDrawDot(e);
+  }
+
+  function bgEndDraw() {
+    bgIsDrawing = false;
+  }
+
+  function bgMoveDraw(e) {
+    if (!bgIsDrawing) return;
+    bgDrawDot(e);
+  }
+
+  function bgDrawDot(e) {
+    e.preventDefault();
+    const { x, y } = bgGetCanvasPos(e);
+    const r = bgBrushSize / 2;
+
+    const imgData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+    const data = imgData.data;
+    const orig = bgOriginalImageData.data;
+
+    const minY = Math.max(0, Math.floor(y - r));
+    const maxY = Math.min(bgCanvas.height - 1, Math.ceil(y + r));
+    const minX = Math.max(0, Math.floor(x - r));
+    const maxX = Math.min(bgCanvas.width - 1, Math.ceil(x + r));
+
+    for (let py = minY; py <= maxY; py++) {
+      for (let px = minX; px <= maxX; px++) {
+        const dx = px - x;
+        const dy = py - y;
+        if (dx * dx + dy * dy <= r * r) {
+          const idx = (py * bgCanvas.width + px) * 4;
+          if (bgBrushMode === 'erase') {
+            data[idx + 3] = 0;
+          } else {
+            data[idx] = orig[idx];
+            data[idx + 1] = orig[idx + 1];
+            data[idx + 2] = orig[idx + 2];
+            data[idx + 3] = orig[idx + 3];
+          }
+        }
+      }
+    }
+
+    bgCtx.putImageData(imgData, 0, 0);
+  }
+
+  bgCanvas.addEventListener('mousedown', bgStartDraw);
+  bgCanvas.addEventListener('touchstart', bgStartDraw, { passive: false });
+  window.addEventListener('mouseup', bgEndDraw);
+  window.addEventListener('touchend', bgEndDraw);
+  bgCanvas.addEventListener('mousemove', bgMoveDraw);
+  bgCanvas.addEventListener('touchmove', bgMoveDraw, { passive: false });
 
   // ---------- 5. OCR ----------
   async function runOcr(){
@@ -1937,16 +2150,13 @@
     const intercept = 128*(1-c);
     const sFactor = satVal/100;
 
-    // Brightness + contrast + saturation
     for(let i=0;i<data.length;i+=4){
       let r=data[i], g=data[i+1], bch=data[i+2];
 
-      // brightness + contrast
       r = c*r+intercept + b;
       g = c*g+intercept + b;
       bch = c*bch+intercept + b;
 
-      // saturation
       const grey = 0.299*r+0.587*g+0.114*bch;
       r = grey + (r-grey)*(1+sFactor);
       g = grey + (g-grey)*(1+sFactor);
@@ -1957,21 +2167,19 @@
       data[i+2] = bch;
     }
 
-    // Clamp
     for(let i=0;i<data.length;i+=4){
       data[i]=Math.max(0,Math.min(255,data[i]));
       data[i+1]=Math.max(0,Math.min(255,data[i+1]));
       data[i+2]=Math.max(0,Math.min(255,data[i+2]));
     }
 
-    // Sharpness (simple 3x3 kernel)
     if(sharpVal>0){
-      const amount = sharpVal/50; // 0..2 approx
+      const amount = sharpVal/50;
       const w=enhanceCanvas.width;
       const h=enhanceCanvas.height;
       const src = new Uint8ClampedArray(data);
       const idx = (x,y)=> (y*w+x)*4;
-      const k = [0,-1,0,-1,5, -1,0,-1,0]; // simple sharpen
+      const k = [0,-1,0,-1,5,-1,0,-1,0];
       for(let y=1;y<h-1;y++){
         for(let x=1;x<w-1;x++){
           let r=0,g=0,b2=0;
@@ -1991,7 +2199,6 @@
           data[i4c+2] = data[i4c+2]*(1-amount) + b2*amount;
         }
       }
-      // final clamp
       for(let i=0;i<data.length;i+=4){
         data[i]=Math.max(0,Math.min(255,data[i]));
         data[i+1]=Math.max(0,Math.min(255,data[i+1]));
@@ -2010,7 +2217,6 @@
   }
 
   function autoEnhance(){
-    // Simple auto preset: little brightness, contrast, saturation, sharpness
     document.getElementById('enhance-bright').value=10;
     document.getElementById('enhance-contrast').value=20;
     document.getElementById('enhance-sat').value=15;
@@ -2168,7 +2374,6 @@
       canvas.width=sheetW;canvas.height=sheetH;
       const ctx=canvas.getContext('2d');
 
-      // sheet background white
       ctx.fillStyle='#ffffff';
       ctx.fillRect(0,0,sheetW,sheetH);
 
@@ -2178,7 +2383,6 @@
           if(placed>=copies) break;
           const x = margin + c*(pw+gap);
           const y = margin + r*(ph+gap);
-          // per-ID background color
           ctx.fillStyle=bg;
           ctx.fillRect(x,y,pw,ph);
           ctx.drawImage(idImg,srcX,srcY,srcW,srcH,x,y,pw,ph);
@@ -2205,7 +2409,6 @@
     }
   }
 
-  // Adjust crop if preset changes
   document.getElementById('id-preset').addEventListener('change',()=>{
     if(idImg){initIdCrop();}
   });
