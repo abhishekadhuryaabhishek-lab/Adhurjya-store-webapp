@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Adhurjya Store — All-in-one Toolbox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Adhurjya Store — client-side toolbox for photos, PDFs, and media." />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- External Libraries (UMD globals) -->
+  <!-- pdf-lib -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- Tesseract.js -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <!-- pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#020617;
+      --bg-soft:#020818;
+      --card:#020b29;
+      --accent:#22c55e;
+      --accent-soft:rgba(34,197,94,0.15);
+      --danger:#fb7185;
+      --danger-soft:rgba(248,113,113,0.12);
+      --border:#1e293b;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --radius:14px;
+      --shadow:0 18px 40px rgba(15,23,42,0.7);
+      --transition:all 0.18s ease-out;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{
+      margin:0;
+      padding:0;
+      height:100%;
+      scroll-behavior:smooth;
+    }
+    body{
+      font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:radial-gradient(circle at top,#1e293b 0,#020617 52%);
+      color:var(--text);
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:50;
+      backdrop-filter:blur(14px);
+      background:linear-gradient(to right,rgba(15,23,42,0.97),rgba(15,23,42,0.85),rgba(15,23,42,0.97));
+      border-bottom:1px solid rgba(148,163,184,0.16);
+    }
+    .header-inner{
+      max-width:1080px;
+      margin:0 auto;
+      padding:0.85rem 1rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:0.5rem;
+    }
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:0.6rem;
+    }
+    .logo-icon{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      background:radial-gradient(circle at 30% 10%,#a5f3fc,#22c55e 45%,#0f172a 90%);
+      box-shadow:0 0 18px rgba(34,197,94,0.55);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      font-weight:700;
+      color:#0b1220;
+    }
+    .logo-title{
+      font-weight:700;
+      font-size:1.05rem;
+      letter-spacing:0.02em;
+    }
+    .logo-sub{
+      font-size:0.7rem;
+      color:var(--muted);
+    }
+    .pill{
+      font-size:0.7rem;
+      padding:0.25rem 0.6rem;
+      border-radius:999px;
+      background:rgba(15,23,42,0.9);
+      border:1px solid rgba(148,163,184,0.4);
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:0.3rem;
+    }
+    .pill-dot{
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 8px rgba(34,197,94,0.9);
+    }
+    main{
+      max-width:1080px;
+      margin:0 auto;
+      padding:1rem 1rem 2rem;
+    }
+
+    /* Home grid */
+    #home-section{
+      padding-top:0.8rem;
+      padding-bottom:2rem;
+    }
+    .hero{
+      margin-bottom:1.4rem;
+      display:flex;
+      flex-direction:column;
+      gap:0.5rem;
+    }
+    .hero-title{
+      font-size:1.4rem;
+      font-weight:600;
+    }
+    .hero-sub{
+      font-size:0.9rem;
+      color:var(--muted);
+      max-width:520px;
+    }
+    .hero-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:0.4rem;
+      margin-top:0.2rem;
+    }
+    .hero-badge{
+      font-size:0.7rem;
+      padding:0.2rem 0.5rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.4);
+      color:var(--muted);
+    }
+
+    .tool-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:0.85rem;
+      margin-top:0.8rem;
+    }
+    @media(min-width:720px){
+      .tool-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+    .tool-card{
+      background:radial-gradient(circle at top left,rgba(56,189,248,0.12),rgba(15,23,42,0.98));
+      border-radius:var(--radius);
+      border:1px solid rgba(148,163,184,0.22);
+      padding:0.75rem 0.8rem 0.85rem;
+      box-shadow:0 10px 28px rgba(15,23,42,0.7);
+      display:flex;
+      flex-direction:column;
+      gap:0.35rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .tool-card h3{
+      margin:0;
+      font-size:0.95rem;
+      font-weight:600;
+    }
+    .tool-card p{
+      margin:0;
+      font-size:0.78rem;
+      color:var(--muted);
+    }
+    .tool-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:0.25rem;
+      margin-top:0.1rem;
+    }
+    .tool-tag{
+      font-size:0.65rem;
+      padding:0.15rem 0.45rem;
+      border-radius:999px;
+      background:rgba(15,23,42,0.9);
+      border:1px solid rgba(148,163,184,0.3);
+      color:var(--muted);
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:0.35rem;
+      padding:0.45rem 0.9rem;
+      border-radius:999px;
+      border:none;
+      font-size:0.78rem;
+      font-weight:500;
+      cursor:pointer;
+      background:linear-gradient(135deg,#22c55e,#2dd4bf);
+      color:#020617;
+      box-shadow:0 12px 22px rgba(16,185,129,0.45);
+      transition:var(--transition);
+      margin-top:0.3rem;
+    }
+    .btn:hover{transform:translateY(-1px) scale(1.01);box-shadow:0 16px 30px rgba(16,185,129,0.5);}
+    .btn:active{transform:translateY(0) scale(0.99);box-shadow:0 10px 18px rgba(16,185,129,0.4);}
+    .btn-outline{
+      background:rgba(15,23,42,0.96);
+      color:var(--muted);
+      border:1px solid rgba(148,163,184,0.4);
+      box-shadow:none;
+    }
+    .btn-outline:hover{
+      background:rgba(15,23,42,1);
+      color:#e5e7eb;
+      box-shadow:0 12px 26px rgba(15,23,42,0.9);
+    }
+
+    /* Panels */
+    .tool-panel{
+      display:none;
+      background:radial-gradient(circle at top left,rgba(56,189,248,0.16),rgba(15,23,42,0.98));
+      border-radius:var(--radius);
+      border:1px solid rgba(148,163,184,0.28);
+      padding:0.85rem 0.9rem 1.1rem;
+      margin-bottom:1.2rem;
+      box-shadow:var(--shadow);
+    }
+    .tool-header{
+      display:flex;
+      justify-content:space-between;
+      gap:0.5rem;
+      align-items:center;
+      margin-bottom:0.6rem;
+    }
+    .tool-header h2{
+      margin:0;
+      font-size:1.02rem;
+      font-weight:600;
+    }
+    .tool-header p{
+      margin:0.15rem 0 0;
+      font-size:0.78rem;
+      color:var(--muted);
+    }
+
+    .section{
+      margin-top:0.6rem;
+      padding-top:0.5rem;
+      border-top:1px solid rgba(148,163,184,0.2);
+    }
+    .section-title{
+      font-size:0.86rem;
+      font-weight:600;
+      margin-bottom:0.35rem;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:0.22rem;
+      margin-bottom:0.45rem;
+      font-size:0.8rem;
+    }
+    .field label{
+      font-weight:500;
+    }
+    .field small{
+      font-size:0.7rem;
+      color:var(--muted);
+    }
+    input[type="file"],
+    input[type="number"],
+    input[type="text"],
+    input[type="range"],
+    select,
+    textarea{
+      background:rgba(15,23,42,0.95);
+      border-radius:0.6rem;
+      border:1px solid rgba(148,163,184,0.4);
+      padding:0.35rem 0.5rem;
+      color:var(--text);
+      font-family:inherit;
+      font-size:0.78rem;
+    }
+    input[type="file"]{padding:0.4rem;}
+    input[type="range"]{padding:0;accent-color:#22c55e;}
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+    .hint{
+      font-size:0.7rem;
+      color:var(--muted);
+    }
+    .status{
+      margin-top:0.35rem;
+      font-size:0.75rem;
+      color:var(--muted);
+    }
+    .status.error{
+      color:#fecaca;
+      background:var(--danger-soft);
+      border-radius:0.5rem;
+      padding:0.25rem 0.4rem;
+    }
+    .status.success{
+      color:#bbf7d0;
+      background:var(--accent-soft);
+      border-radius:0.5rem;
+      padding:0.25rem 0.4rem;
+    }
+
+    .thumb-list{
+      display:flex;
+      flex-direction:column;
+      gap:0.35rem;
+      margin-top:0.35rem;
+      max-height:230px;
+      overflow:auto;
+      padding-right:0.2rem;
+    }
+    .thumb-item{
+      display:flex;
+      align-items:center;
+      gap:0.4rem;
+      padding:0.3rem 0.4rem;
+      border-radius:0.65rem;
+      background:rgba(15,23,42,0.96);
+      border:1px solid rgba(148,163,184,0.3);
+    }
+    .thumb-item img{
+      width:48px;
+      height:48px;
+      object-fit:cover;
+      border-radius:0.5rem;
+    }
+    .thumb-meta{
+      flex:1;
+      min-width:0;
+    }
+    .thumb-meta div{
+      font-size:0.75rem;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .thumb-meta small{
+      font-size:0.68rem;
+      color:var(--muted);
+    }
+    .thumb-actions{
+      display:flex;
+      flex-direction:column;
+      gap:0.2rem;
+    }
+    .icon-btn{
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.4);
+      background:rgba(15,23,42,0.98);
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:0.6rem;
+      cursor:pointer;
+      padding:0;
+    }
+    .icon-btn:disabled{
+      opacity:0.3;
+      cursor:default;
+    }
+
+    .preview-img{
+      max-width:100%;
+      border-radius:0.7rem;
+      border:1px solid rgba(148,163,184,0.4);
+      background:rgba(15,23,42,0.96);
+      display:block;
+    }
+    .preview-row{
+      display:flex;
+      flex-direction:column;
+      gap:0.6rem;
+    }
+    @media(min-width:720px){
+      .preview-row{
+        flex-direction:row;
+        align-items:flex-start;
+      }
+    }
+
+    .flex{
+      display:flex;
+    }
+    .flex-between{display:flex;justify-content:space-between;align-items:center;}
+    .flex-wrap{flex-wrap:wrap;}
+    .gap-xs{gap:0.25rem;}
+    .gap-sm{gap:0.4rem;}
+    .gap-md{gap:0.6rem;}
+    .mt-xs{margin-top:0.25rem;}
+    .mt-sm{margin-top:0.4rem;}
+    .mt-md{margin-top:0.7rem;}
+    .badge-soft{
+      font-size:0.7rem;
+      padding:0.16rem 0.5rem;
+      border-radius:999px;
+      background:rgba(15,23,42,0.96);
+      border:1px dashed rgba(148,163,184,0.4);
+      color:var(--muted);
+    }
+
+    .download-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0.4rem 0.85rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.45);
+      font-size:0.78rem;
+      margin-top:0.35rem;
+      background:rgba(15,23,42,0.98);
+      color:var(--text);
+      text-decoration:none;
+    }
+    .download-link:hover{
+      background:rgba(15,23,42,1);
+    }
+
+    .pill-small{
+      font-size:0.66rem;
+      padding:0.1rem 0.4rem;
+      border-radius:999px;
+      background:rgba(15,23,42,0.94);
+      border:1px solid rgba(148,163,184,0.35);
+      color:var(--muted);
+    }
+
+    /* Signature canvas */
+    #signature-canvas{
+      width:100%;
+      max-width:600px;
+      height:220px;
+      border-radius:0.8rem;
+      border:1px dashed rgba(148,163,184,0.6);
+      background:#020617;
+      touch-action:none;
+    }
+
+    /* ID photo cropper */
+    .id-crop-wrapper{
+      position:relative;
+      border-radius:0.8rem;
+      overflow:hidden;
+      border:1px solid rgba(148,163,184,0.4);
+      background:#020617;
+      max-height:350px;
+    }
+    .id-crop-img{
+      width:100%;
+      display:block;
+    }
+    .crop-rect{
+      position:absolute;
+      border:2px solid rgba(34,197,94,0.9);
+      box-shadow:0 0 0 100vmax rgba(15,23,42,0.65);
+      cursor:move;
+      border-radius:0.4rem;
+    }
+    .crop-rect::after{
+      content:"Drag to adjust";
+      position:absolute;
+      left:50%;
+      bottom:-18px;
+      transform:translateX(-50%);
+      font-size:0.65rem;
+      color:var(--muted);
+      background:rgba(15,23,42,0.9);
+      padding:0.05rem 0.35rem;
+      border-radius:999px;
+    }
+
+    .progress-bar{
+      width:100%;
+      height:6px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.96);
+      overflow:hidden;
+      margin-top:0.25rem;
+    }
+    .progress-inner{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#22c55e,#2dd4bf);
+      transition:width 0.1s linear;
+    }
+
+    .divider{
+      height:1px;
+      width:100%;
+      background:rgba(148,163,184,0.2);
+      margin:0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">A</div>
+      <div>
+        <div class="logo-title">Adhurjya Store</div>
+        <div class="logo-sub">All-in-one browser toolbox • 100% client-side</div>
+      </div>
+    </div>
+    <div class="pill">
+      <span class="pill-dot"></span>
+      <span>Runs offline in your browser</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HOME / TOOL GRID -->
+  <section id="home-section">
+    <div class="hero">
+      <div class="hero-title">Choose a tool to get started</div>
+      <div class="hero-sub">
+        Convert, compress and enhance your photos & PDFs directly in your browser. No uploads, no login, just pure client-side magic.
+      </div>
+      <div class="hero-badges">
+        <span class="hero-badge">Photo → PDF</span>
+        <span class="hero-badge">PDF tools</span>
+        <span class="hero-badge">OCR & utilities</span>
+        <span class="hero-badge">Signature & ID photos</span>
+      </div>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-card">
+        <h3>Photo → PDF Converter</h3>
+        <p>Combine multiple photos into a single high-quality PDF with size-friendly compression.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">JPG/PNG</span>
+          <span class="tool-tag">Multi-page</span>
+        </div>
+        <button class="btn" onclick="openTool('photo-pdf')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Photo Size Compressor</h3>
+        <p>Shrink image file size with adjustable quality and max dimensions.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Compress</span>
+        </div>
+        <button class="btn" onclick="openTool('photo-compress')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Image Resizer</h3>
+        <p>Resize images to exact width/height while keeping aspect ratio if needed.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Resize</span>
+        </div>
+        <button class="btn" onclick="openTool('image-resize')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Background Remover</h3>
+        <p>Remove solid-color backgrounds using a simple smart threshold.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Transparent PNG</span>
+        </div>
+        <button class="btn" onclick="openTool('bg-remove')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Image to Text (OCR)</h3>
+        <p>Extract text from images using Tesseract.js — English + optional Hindi/Bengali.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">OCR</span>
+        </div>
+        <button class="btn" onclick="openTool('ocr')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>PDF Compressor</h3>
+        <p>Re-render PDF pages as compressed images to reduce size.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">PDF</span>
+        </div>
+        <button class="btn" onclick="openTool('pdf-compress')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Merge PDF</h3>
+        <p>Combine multiple PDF files into a single document.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Merge</span>
+        </div>
+        <button class="btn" onclick="openTool('pdf-merge')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>PDF to Image</h3>
+        <p>Convert PDF pages into downloadable images.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">PDF → PNG/JPG</span>
+        </div>
+        <button class="btn" onclick="openTool('pdf-to-image')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Image Format Converter</h3>
+        <p>Convert between JPG, PNG and WEBP formats.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Format</span>
+        </div>
+        <button class="btn" onclick="openTool('image-format')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Audio to Text (Demo)</h3>
+        <p>Mock audio transcription UI with clear client-side limitations.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Demo only</span>
+        </div>
+        <button class="btn" onclick="openTool('audio-text')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>Digital Signature Pad</h3>
+        <p>Draw your signature and download it as PNG (solid or transparent).</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Signatures</span>
+        </div>
+        <button class="btn" onclick="openTool('signature')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>AI Photo Enhancer</h3>
+        <p>Adjust brightness/contrast or apply “Auto Enhance”.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">Enhance</span>
+        </div>
+        <button class="btn" onclick="openTool('photo-enhance')">Open Tool</button>
+      </div>
+      <div class="tool-card">
+        <h3>ID Photo Maker</h3>
+        <p>Crop portrait, choose background and ID size presets.</p>
+        <div class="tool-tags">
+          <span class="tool-tag">ID / Passport</span>
+        </div>
+        <button class="btn" onclick="openTool('id-photo')">Open Tool</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOL PANELS -->
+
+  <!-- 1. Photo → PDF -->
+  <section id="panel-photo-pdf" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Photo → PDF Converter</h2>
+        <p>Combine multiple images into a single PDF, with simple compression options.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Images</div>
+      <div class="field">
+        <label>Select images</label>
+        <input id="photoPdf-input" type="file" accept="image/*" multiple />
+        <small>Tip: on mobile, you can use camera or gallery.</small>
+      </div>
+      <div id="photoPdf-list" class="thumb-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Settings</div>
+      <div class="flex flex-wrap gap-sm">
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label for="photoPdf-maxDim">Max dimension (px)</label>
+          <input id="photoPdf-maxDim" type="number" value="1600" min="600" max="4000" />
+        </div>
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label for="photoPdf-quality">Quality preset</label>
+          <select id="photoPdf-quality">
+            <option value="0.9">High (larger file)</option>
+            <option value="0.7" selected>Medium</option>
+            <option value="0.5">Small (smaller file)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn mt-sm" onclick="generatePhotoPdf()">Generate PDF</button>
+      <div id="photoPdf-status" class="status"></div>
+      <a id="photoPdf-download" class="download-link" href="#" style="display:none;" download="photos.pdf">⬇ Download PDF</a>
+    </div>
+  </section>
+
+  <!-- 2. Photo Size Compressor -->
+  <section id="panel-photo-compress" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Photo Size Compressor</h2>
+        <p>Compress an image with adjustable quality and optional max size.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image</label>
+        <input id="compress-input" type="file" accept="image/*" />
+      </div>
+      <div class="flex flex-wrap gap-sm">
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label>Quality</label>
+          <input id="compress-quality" type="range" min="0.2" max="1" step="0.05" value="0.7" />
+          <small><span id="compress-quality-label">70</span>%</small>
+        </div>
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label>Max width (px, optional)</label>
+          <input id="compress-maxW" type="number" min="200" max="4000" placeholder="e.g. 1600" />
+        </div>
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label>Max height (px, optional)</label>
+          <input id="compress-maxH" type="number" min="200" max="4000" placeholder="e.g. 1600" />
+        </div>
+      </div>
+      <button class="btn mt-sm" onclick="compressPhoto()">Compress Image</button>
+      <div class="status mt-xs">
+        Original: <span id="compress-original-size">–</span> KB • Compressed: <span id="compress-new-size">–</span> KB
+      </div>
+      <a id="compress-download" class="download-link" href="#" style="display:none;" download="compressed.jpg">⬇ Download compressed image</a>
+      <div class="divider"></div>
+      <div class="section-title">Preview</div>
+      <div class="preview-row">
+        <div style="flex:1;">
+          <div class="pill-small">Original</div>
+          <img id="compress-original-preview" class="preview-img mt-xs" alt="" />
+        </div>
+        <div style="flex:1;">
+          <div class="pill-small">Compressed</div>
+          <img id="compress-new-preview" class="preview-img mt-xs" alt="" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Image Resizer -->
+  <section id="panel-image-resize" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Image Resizer</h2>
+        <p>Resize images to specific dimensions with optional aspect ratio lock.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image</label>
+        <input id="resize-input" type="file" accept="image/*" />
+      </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
+        <div class="field" style="flex:1 1 90px;max-width:150px;">
+          <label>Width (px)</label>
+          <input id="resize-width" type="number" min="10" />
+        </div>
+        <div class="field" style="flex:1 1 90px;max-width:150px;">
+          <label>Height (px)</label>
+          <input id="resize-height" type="number" min="10" />
+        </div>
+        <div class="field" style="flex:1 1 90px;max-width:160px;">
+          <label>
+            <input id="resize-keep-aspect" type="checkbox" checked />
+            Keep aspect ratio
+          </label>
+        </div>
+      </div>
+      <button class="btn mt-sm" onclick="resizeImage()">Resize Image</button>
+      <div id="resize-status" class="status"></div>
+      <a id="resize-download" class="download-link" href="#" style="display:none;" download="resized.png">⬇ Download resized image</a>
+      <div class="divider"></div>
+      <div class="section-title">Preview</div>
+      <div class="preview-row">
+        <div style="flex:1;">
+          <div class="pill-small">Original</div>
+          <img id="resize-original-preview" class="preview-img mt-xs" alt="" />
+        </div>
+        <div style="flex:1;">
+          <div class="pill-small">Resized</div>
+          <img id="resize-new-preview" class="preview-img mt-xs" alt="" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Background Remover -->
+  <section id="panel-bg-remove" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Background Remover (solid color)</h2>
+        <p>Remove simple solid-color backgrounds using a color-threshold algorithm.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image</label>
+        <input id="bg-input" type="file" accept="image/*" />
+        <small>Works best if background is mostly a single color (e.g. white wall).</small>
+      </div>
+      <div class="field">
+        <label>Threshold</label>
+        <input id="bg-threshold" type="range" min="5" max="80" value="25" />
+        <small>Higher value removes more pixels (may affect subject).</small>
+      </div>
+      <button class="btn mt-sm" onclick="removeBackground()">Remove Background</button>
+      <div id="bg-status" class="status"></div>
+      <a id="bg-download" class="download-link" href="#" style="display:none;" download="no-background.png">⬇ Download PNG</a>
+      <div class="divider"></div>
+      <div class="section-title">Preview</div>
+      <div class="preview-row">
+        <div style="flex:1;">
+          <div class="pill-small">Original</div>
+          <img id="bg-original-preview" class="preview-img mt-xs" alt="" />
+        </div>
+        <div style="flex:1;">
+          <div class="pill-small">Background removed</div>
+          <canvas id="bg-canvas" class="preview-img mt-xs"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. OCR -->
+  <section id="panel-ocr" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Image to Text (OCR)</h2>
+        <p>Use Tesseract.js to extract text from images.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image with text</label>
+        <input id="ocr-input" type="file" accept="image/*" />
+      </div>
+      <div class="field">
+        <label>Language</label>
+        <select id="ocr-lang">
+          <option value="eng">English (eng)</option>
+          <option value="hin">Hindi (hin)</option>
+          <option value="ben">Bengali (ben)</option>
+        </select>
+        <small>Hindi/Bengali may need extra data and can be slower. Requires internet for language packs.</small>
+      </div>
+      <button class="btn mt-sm" onclick="runOcr()">Run OCR</button>
+      <div id="ocr-status" class="status"></div>
+      <div class="progress-bar" style="display:none;" id="ocr-progress-bar">
+        <div class="progress-inner" id="ocr-progress-inner"></div>
+      </div>
+      <div class="section mt-md">
+        <div class="section-title">Recognized text</div>
+        <textarea id="ocr-output" placeholder="Your extracted text will appear here..."></textarea>
+        <button class="btn btn-outline mt-xs" onclick="copyOcrText()">Copy Text</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. PDF Compressor -->
+  <section id="panel-pdf-compress" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>PDF Compressor</h2>
+        <p>Re-render pages as compressed images and rebuild a smaller PDF.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select PDF</label>
+        <input id="pdfc-input" type="file" accept="application/pdf" />
+      </div>
+      <div class="field">
+        <label>Quality preset</label>
+        <select id="pdfc-quality">
+          <option value="high">High (better quality, larger)</option>
+          <option value="medium" selected>Medium</option>
+          <option value="small">Small (smaller size)</option>
+        </select>
+      </div>
+      <button class="btn mt-sm" onclick="compressPdf()">Compress PDF</button>
+      <div id="pdfc-status" class="status"></div>
+      <a id="pdfc-download" class="download-link" href="#" style="display:none;" download="compressed.pdf">⬇ Download compressed PDF</a>
+      <div class="hint mt-xs">Note: This is a simplified client-side compressor. Very large PDFs may be slow or may fail on low-RAM devices.</div>
+    </div>
+  </section>
+
+  <!-- 7. Merge PDF -->
+  <section id="panel-pdf-merge" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Merge PDF</h2>
+        <p>Combine multiple PDF files into a single document.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select PDFs</label>
+        <input id="merge-input" type="file" accept="application/pdf" multiple />
+      </div>
+      <div id="merge-list" class="thumb-list"></div>
+      <button class="btn mt-sm" onclick="mergePdfs()">Merge PDFs</button>
+      <div id="merge-status" class="status"></div>
+      <a id="merge-download" class="download-link" href="#" style="display:none;" download="merged.pdf">⬇ Download merged PDF</a>
+    </div>
+  </section>
+
+  <!-- 8. PDF to Image -->
+  <section id="panel-pdf-to-image" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>PDF to Image</h2>
+        <p>Render PDF pages as images you can download.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select PDF</label>
+        <input id="p2i-input" type="file" accept="application/pdf" />
+      </div>
+      <div class="flex flex-wrap gap-sm">
+        <div class="field" style="flex:1 1 100px;max-width:150px;">
+          <label>From page</label>
+          <input id="p2i-from" type="number" min="1" placeholder="1" />
+        </div>
+        <div class="field" style="flex:1 1 100px;max-width:150px;">
+          <label>To page</label>
+          <input id="p2i-to" type="number" min="1" placeholder="leave blank for last" />
+        </div>
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label>Image type</label>
+          <select id="p2i-type">
+            <option value="png">PNG</option>
+            <option value="jpeg">JPEG</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn mt-sm" onclick="pdfToImages()">Convert</button>
+      <div id="p2i-status" class="status"></div>
+      <div id="p2i-gallery" class="section mt-md"></div>
+    </div>
+  </section>
+
+  <!-- 9. Image Format Converter -->
+  <section id="panel-image-format" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Image Format Converter</h2>
+        <p>Convert between JPG, PNG and WEBP formats.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image</label>
+        <input id="fmt-input" type="file" accept="image/*" />
+      </div>
+      <div class="flex flex-wrap gap-sm">
+        <div class="field" style="flex:1 1 120px;max-width:180px;">
+          <label>Output format</label>
+          <select id="fmt-output">
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1 1 120px;max-width:200px;">
+          <label>Quality (JPG/WEBP)</label>
+          <input id="fmt-quality" type="range" min="0.2" max="1" step="0.05" value="0.85" />
+          <small><span id="fmt-quality-label">85</span>%</small>
+        </div>
+      </div>
+      <button class="btn mt-sm" onclick="convertFormat()">Convert</button>
+      <div id="fmt-status" class="status"></div>
+      <a id="fmt-download" class="download-link" href="#" style="display:none;">⬇ Download converted image</a>
+      <div class="divider"></div>
+      <div class="section-title">Preview</div>
+      <img id="fmt-preview" class="preview-img mt-xs" alt="" />
+    </div>
+  </section>
+
+  <!-- 10. Audio to Text (Demo) -->
+  <section id="panel-audio-text" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Audio to Text (Demo UI)</h2>
+        <p>Explains client-side limitations. Real transcription requires a backend or third-party API.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="badge-soft">Important: This demo does NOT run real speech-to-text in the browser.</div>
+      <div class="hint mt-xs">
+        Fully offline speech-to-text models are too heavy for typical browsers. In production, you’d send audio to a server or an API (like Whisper, Google Cloud STT, etc.).
+      </div>
+      <div class="field mt-sm">
+        <label>Upload audio (demo only)</label>
+        <input id="audio-input" type="file" accept="audio/*" />
+        <small>We only read the file info in this demo. Audio data never leaves your device.</small>
+      </div>
+      <div id="audio-status" class="status"></div>
+      <div class="section mt-md">
+        <div class="section-title">Manual transcription</div>
+        <textarea id="audio-notes" placeholder="Play your audio locally, then type your own transcription here..."></textarea>
+        <button class="btn btn-outline mt-xs" onclick="copyAudioText()">Copy Text</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. Signature pad -->
+  <section id="panel-signature" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Digital Signature Pad</h2>
+        <p>Draw a signature with mouse or touch and download as PNG.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <canvas id="signature-canvas"></canvas>
+      <div class="flex flex-wrap gap-sm mt-sm">
+        <button class="btn btn-outline" onclick="clearSignature()">Clear</button>
+        <button class="btn btn-outline" onclick="downloadSignature(false)">Download PNG (white bg)</button>
+        <button class="btn btn-outline" onclick="downloadSignature(true)">Download Transparent PNG</button>
+      </div>
+      <div class="hint mt-xs">Tip: rotate your phone horizontally for a wider signature area.</div>
+    </div>
+  </section>
+
+  <!-- 12. Photo Enhancer -->
+  <section id="panel-photo-enhance" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>AI Photo Enhancer (basic)</h2>
+        <p>Adjust brightness and contrast, or use Auto Enhance for a quick boost.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select image</label>
+        <input id="enhance-input" type="file" accept="image/*" />
+      </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
+        <div class="field" style="flex:1 1 130px;max-width:220px;">
+          <label>Brightness</label>
+          <input id="enhance-bright" type="range" min="-80" max="80" value="0" />
+          <small><span id="enhance-bright-label">0</span></small>
+        </div>
+        <div class="field" style="flex:1 1 130px;max-width:220px;">
+          <label>Contrast</label>
+          <input id="enhance-contrast" type="range" min="-60" max="60" value="0" />
+          <small><span id="enhance-contrast-label">0</span></small>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
+        <button class="btn btn-outline" onclick="applyEnhance()">Apply</button>
+        <button class="btn btn-outline" onclick="autoEnhance()">Auto Enhance</button>
+      </div>
+      <a id="enhance-download" class="download-link" href="#" style="display:none;" download="enhanced.png">⬇ Download enhanced image</a>
+      <div class="divider"></div>
+      <div class="section-title">Preview</div>
+      <div class="preview-row">
+        <div style="flex:1;">
+          <div class="pill-small">Original</div>
+          <img id="enhance-original" class="preview-img mt-xs" alt="" />
+        </div>
+        <div style="flex:1;">
+          <div class="pill-small">Enhanced</div>
+          <canvas id="enhance-canvas" class="preview-img mt-xs"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13. ID Photo Maker -->
+  <section id="panel-id-photo" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>ID Photo Maker</h2>
+        <p>Crop a portrait and generate ID photos with solid backgrounds.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+    <div class="section">
+      <div class="field">
+        <label>Select portrait photo</label>
+        <input id="id-input" type="file" accept="image/*" />
+      </div>
+      <div class="flex flex-wrap gap-sm mt-xs">
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Preset size</label>
+          <select id="id-preset">
+            <!-- These sizes are approximations in pixels at screen resolution -->
+            <option value="295x413">Passport (~35×49 mm → 295×413 px)</option>
+            <option value="600x600">2×2 inch (~300 DPI → 600×600 px)</option>
+            <option value="413x531">Visa (~413×531 px)</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Background color</label>
+          <select id="id-bg">
+            <option value="#ffffff">White</option>
+            <option value="#1d4ed8">Blue</option>
+            <option value="#dc2626">Red</option>
+            <option value="#f1f5f9">Off-white</option>
+          </select>
+        </div>
+      </div>
+      <div id="id-crop-container" class="id-crop-wrapper mt-sm" style="display:none;">
+        <img id="id-img" class="id-crop-img" alt="" />
+        <div id="id-crop-rect" class="crop-rect"></div>
+      </div>
+      <button class="btn mt-sm" onclick="generateIdPhoto()">Generate ID Photo</button>
+      <div id="id-status" class="status"></div>
+      <a id="id-download" class="download-link" href="#" style="display:none;" download="id-photo.png">⬇ Download ID photo</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  // ---------- GLOBAL HELPERS ----------
+  const { PDFDocument } = PDFLib;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+  function openTool(slug){
+    document.getElementById('home-section').style.display='none';
+    document.querySelectorAll('.tool-panel').forEach(p=>p.style.display='none');
+    const panel=document.getElementById('panel-'+slug);
+    if(panel){panel.style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
+  }
+  function goHome(){
+    document.querySelectorAll('.tool-panel').forEach(p=>p.style.display='none');
+    document.getElementById('home-section').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function bytesToKB(bytes){
+    return (bytes/1024).toFixed(1);
+  }
+  function dataURLToUint8Array(dataURL){
+    const base64 = dataURL.split(',')[1];
+    const raw = atob(base64);
+    const arr = new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+    return arr;
+  }
+  function blobFromDataURL(dataURL){
+    const arr = dataURLToUint8Array(dataURL);
+    const mime = dataURL.substring(dataURL.indexOf(':')+1,dataURL.indexOf(';'));
+    return new Blob([arr],{type:mime});
+  }
+  function downloadBlob(blob,filename){
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }
+  function readFileAsDataURL(file){
+    return new Promise((resolve,reject)=>{
+      const fr=new FileReader();
+      fr.onload=()=>resolve(fr.result);
+      fr.onerror=reject;
+      fr.readAsDataURL(file);
+    });
+  }
+  function loadImageFromDataURL(dataURL){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=reject;
+      img.src=dataURL;
+    });
+  }
+  async function loadImageFromFile(file){
+    const url = await readFileAsDataURL(file);
+    return loadImageFromDataURL(url);
+  }
+
+  // ---------- 1. PHOTO → PDF ----------
+  let photoPdfFiles = [];
+
+  document.getElementById('photoPdf-input').addEventListener('change', (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length)return;
+    photoPdfFiles = photoPdfFiles.concat(files);
+    renderPhotoPdfList();
+  });
+
+  function renderPhotoPdfList(){
+    const listEl=document.getElementById('photoPdf-list');
+    listEl.innerHTML='';
+    if(!photoPdfFiles.length){
+      listEl.innerHTML='<div class="hint">No images selected yet.</div>';
+      return;
+    }
+    photoPdfFiles.forEach((file,idx)=>{
+      const item=document.createElement('div');
+      item.className='thumb-item';
+      const imgEl=document.createElement('img');
+      const meta=document.createElement('div');
+      meta.className='thumb-meta';
+      const nameDiv=document.createElement('div');
+      nameDiv.textContent=file.name;
+      const small=document.createElement('small');
+      small.textContent=bytesToKB(file.size)+' KB';
+      meta.appendChild(nameDiv);meta.appendChild(small);
+      const actions=document.createElement('div');
+      actions.className='thumb-actions';
+      const up=document.createElement('button');
+      up.className='icon-btn';up.textContent='↑';
+      up.disabled = idx===0;
+      up.onclick=()=>{swapInArray(photoPdfFiles,idx,idx-1);renderPhotoPdfList();};
+      const down=document.createElement('button');
+      down.className='icon-btn';down.textContent='↓';
+      down.disabled = idx===photoPdfFiles.length-1;
+      down.onclick=()=>{swapInArray(photoPdfFiles,idx,idx+1);renderPhotoPdfList();};
+      const del=document.createElement('button');
+      del.className='icon-btn';del.textContent='✕';
+      del.onclick=()=>{photoPdfFiles.splice(idx,1);renderPhotoPdfList();};
+      actions.appendChild(up);actions.appendChild(down);actions.appendChild(del);
+      item.appendChild(imgEl);item.appendChild(meta);item.appendChild(actions);
+      listEl.appendChild(item);
+      // thumbnail
+      readFileAsDataURL(file).then(url=>{imgEl.src=url;}).catch(()=>{});
+    });
+  }
+  function swapInArray(arr,i,j){
+    const t=arr[i];arr[i]=arr[j];arr[j]=t;
+  }
+
+  async function generatePhotoPdf(){
+    const status=document.getElementById('photoPdf-status');
+    const link=document.getElementById('photoPdf-download');
+    link.style.display='none';link.href='#';
+    status.textContent='';
+    if(!photoPdfFiles.length){
+      status.textContent='Please select at least one image.';
+      status.className='status error';
+      return;
+    }
+    const maxDim = parseInt(document.getElementById('photoPdf-maxDim').value)||1600;
+    const quality = parseFloat(document.getElementById('photoPdf-quality').value)||0.7;
+    try{
+      status.textContent='Processing images and building PDF...';
+      status.className='status';
+      const pdfDoc = await PDFDocument.create();
+      for(let idx=0;idx<photoPdfFiles.length;idx++){
+        const file = photoPdfFiles[idx];
+        status.textContent=`Processing image ${idx+1} of ${photoPdfFiles.length}...`;
+        const img = await loadImageFromFile(file);
+        const ratio = Math.min(1,maxDim/Math.max(img.width,img.height));
+        const w = Math.round(img.width*ratio);
+        const h = Math.round(img.height*ratio);
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        const dataURL = canvas.toDataURL('image/jpeg',quality);
+        const bytes = dataURLToUint8Array(dataURL);
+        const embedded = await pdfDoc.embedJpg(bytes);
+        const page = pdfDoc.addPage([embedded.width,embedded.height]);
+        page.drawImage(embedded,{x:0,y:0,width:embedded.width,height:embedded.height});
+      }
+      status.textContent='Finalizing PDF...';
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes],{type:'application/pdf'});
+      const url = URL.createObjectURL(blob);
+      link.href=url;
+      link.style.display='inline-flex';
+      link.onclick=()=>{setTimeout(()=>URL.revokeObjectURL(url),2000);};
+      status.textContent=`Done. Estimated size: ${bytesToKB(blob.size)} KB`;
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Something went wrong while generating the PDF.';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 2. PHOTO COMPRESSOR ----------
+  let compressOriginalUrl=null;
+  document.getElementById('compress-quality').addEventListener('input',(e)=>{
+    document.getElementById('compress-quality-label').textContent = Math.round(parseFloat(e.target.value)*100);
+  });
+  document.getElementById('compress-input').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    const originalSizeEl=document.getElementById('compress-original-size');
+    const preview=document.getElementById('compress-original-preview');
+    if(!file){originalSizeEl.textContent='–';preview.src='';return;}
+    originalSizeEl.textContent=bytesToKB(file.size);
+    compressOriginalUrl = await readFileAsDataURL(file);
+    preview.src = compressOriginalUrl;
+  });
+
+  async function compressPhoto(){
+    const input=document.getElementById('compress-input');
+    const file=input.files[0];
+    const statusOriginal=document.getElementById('compress-original-size');
+    const statusNew=document.getElementById('compress-new-size');
+    const previewNew=document.getElementById('compress-new-preview');
+    const link=document.getElementById('compress-download');
+    link.style.display='none';link.href='#';
+    statusNew.textContent='–';
+    if(!file){
+      alert('Please select an image first.');
+      return;
+    }
+    try{
+      const quality = parseFloat(document.getElementById('compress-quality').value)||0.7;
+      const maxW = parseInt(document.getElementById('compress-maxW').value)||null;
+      const maxH = parseInt(document.getElementById('compress-maxH').value)||null;
+      const img = await loadImageFromFile(file);
+      let w=img.width,h=img.height;
+      if(maxW || maxH){
+        const ratio = Math.min(
+          maxW ? maxW/w : 1,
+          maxH ? maxH/h : 1
+        );
+        if(ratio<1){w=Math.round(w*ratio);h=Math.round(h*ratio);}
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      const dataURL = canvas.toDataURL('image/jpeg',quality);
+      const blob = blobFromDataURL(dataURL);
+      const url=URL.createObjectURL(blob);
+      previewNew.src=url;
+      statusOriginal.textContent=bytesToKB(file.size);
+      statusNew.textContent=bytesToKB(blob.size);
+      link.href=url;
+      link.download='compressed.jpg';
+      link.style.display='inline-flex';
+    }catch(err){
+      console.error(err);
+      alert('Compression failed.');
+    }
+  }
+
+  // ---------- 3. IMAGE RESIZER ----------
+  let resizeImageFile=null;
+  document.getElementById('resize-input').addEventListener('change', async (e)=>{
+    const file=e.target.files[0];
+    const wEl=document.getElementById('resize-width');
+    const hEl=document.getElementById('resize-height');
+    const originalPrev=document.getElementById('resize-original-preview');
+    const status=document.getElementById('resize-status');
+    document.getElementById('resize-download').style.display='none';
+    document.getElementById('resize-new-preview').src='';
+    if(!file){originalPrev.src='';status.textContent='';return;}
+    try{
+      const dataURL=await readFileAsDataURL(file);
+      resizeImageFile=file;
+      const img=await loadImageFromDataURL(dataURL);
+      originalPrev.src=dataURL;
+      wEl.value=img.width;
+      hEl.value=img.height;
+      status.textContent=`Original: ${img.width}×${img.height}`;
+      status.className='status';
+    }catch(err){
+      console.error(err);
+      status.textContent='Could not load image.';
+      status.className='status error';
+    }
+  });
+
+  document.getElementById('resize-width').addEventListener('input',()=>{
+    syncResizeAspect(true);
+  });
+  document.getElementById('resize-height').addEventListener('input',()=>{
+    syncResizeAspect(false);
+  });
+
+  async function syncResizeAspect(widthChanged){
+    if(!resizeImageFile) return;
+    const keep=document.getElementById('resize-keep-aspect').checked;
+    if(!keep)return;
+    const wEl=document.getElementById('resize-width');
+    const hEl=document.getElementById('resize-height');
+    const dataURL=await readFileAsDataURL(resizeImageFile);
+    const img=await loadImageFromDataURL(dataURL);
+    const aspect = img.width/img.height;
+    if(widthChanged){
+      const w=parseInt(wEl.value)||img.width;
+      hEl.value=Math.round(w/aspect);
+    }else{
+      const h=parseInt(hEl.value)||img.height;
+      wEl.value=Math.round(h*aspect);
+    }
+  }
+
+  async function resizeImage(){
+    const file=resizeImageFile;
+    const w=parseInt(document.getElementById('resize-width').value);
+    const h=parseInt(document.getElementById('resize-height').value);
+    const status=document.getElementById('resize-status');
+    const link=document.getElementById('resize-download');
+    const newPrev=document.getElementById('resize-new-preview');
+    link.style.display='none';newPrev.src='';
+    if(!file){status.textContent='Please select an image first.';status.className='status error';return;}
+    if(!w || !h){status.textContent='Please enter valid width and height.';status.className='status error';return;}
+    try{
+      const img=await loadImageFromFile(file);
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(img,0,0,w,h);
+      const dataURL=canvas.toDataURL('image/png');
+      const blob=blobFromDataURL(dataURL);
+      const url=URL.createObjectURL(blob);
+      newPrev.src=url;
+      link.href=url;
+      link.download='resized.png';
+      link.style.display='inline-flex';
+      status.textContent=`Resized to ${w}×${h}`;
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Resizing failed.';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 4. BACKGROUND REMOVER ----------
+  let bgImageFile=null;
+  const bgCanvas=document.getElementById('bg-canvas');
+  const bgCtx=bgCanvas.getContext('2d');
+
+  document.getElementById('bg-input').addEventListener('change', async (e)=>{
+    const file=e.target.files[0];
+    const prev=document.getElementById('bg-original-preview');
+    const status=document.getElementById('bg-status');
+    if(!file){prev.src='';status.textContent='';return;}
+    try{
+      bgImageFile=file;
+      const img=await loadImageFromFile(file);
+      prev.src=await readFileAsDataURL(file);
+      bgCanvas.width=img.width;
+      bgCanvas.height=img.height;
+      bgCtx.drawImage(img,0,0,img.width,img.height);
+      status.textContent='Image loaded. Adjust threshold and click "Remove Background".';
+      status.className='status';
+    }catch(err){
+      console.error(err);
+      status.textContent='Could not load image.';
+      status.className='status error';
+    }
+  });
+
+  async function removeBackground(){
+    const status=document.getElementById('bg-status');
+    const link=document.getElementById('bg-download');
+    link.style.display='none';
+    if(!bgImageFile){
+      status.textContent='Please select an image first.';
+      status.className='status error';
+      return;
+    }
+    try{
+      status.textContent='Processing...';
+      status.className='status';
+      const threshold = parseInt(document.getElementById('bg-threshold').value)||25;
+      const imgData = bgCtx.getImageData(0,0,bgCanvas.width,bgCanvas.height);
+      const data=imgData.data;
+      const r0=data[0],g0=data[1],b0=data[2];
+      const t = threshold*3;
+      for(let i=0;i<data.length;i+=4){
+        const dr=Math.abs(data[i]-r0);
+        const dg=Math.abs(data[i+1]-g0);
+        const db=Math.abs(data[i+2]-b0);
+        if(dr+dg+db<t){
+          data[i+3]=0;
+        }
+      }
+      bgCtx.putImageData(imgData,0,0);
+      const dataURL=bgCanvas.toDataURL('image/png');
+      const blob=blobFromDataURL(dataURL);
+      const url=URL.createObjectURL(blob);
+      link.href=url;
+      link.style.display='inline-flex';
+      status.textContent='Done. Download transparent PNG.';
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Background removal failed (image may be too large).';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 5. OCR ----------
+  async function runOcr(){
+    const input=document.getElementById('ocr-input');
+    const file=input.files[0];
+    const lang=document.getElementById('ocr-lang').value;
+    const status=document.getElementById('ocr-status');
+    const out=document.getElementById('ocr-output');
+    const bar=document.getElementById('ocr-progress-bar');
+    const inner=document.getElementById('ocr-progress-inner');
+    out.value='';
+    inner.style.width='0%';
+    bar.style.display='none';
+    if(!file){
+      status.textContent='Please select an image first.';
+      status.className='status error';
+      return;
+    }
+    status.textContent='Loading Tesseract and starting OCR...';
+    status.className='status';
+    try{
+      bar.style.display='block';
+      const { Tesseract } = window;
+      const result = await Tesseract.recognize(file, lang, {
+        logger:m=>{
+          if(m.status==='recognizing text' && m.progress){
+            inner.style.width=(m.progress*100).toFixed(0)+'%';
+          }
+        }
+      });
+      out.value=result.data.text || '';
+      status.textContent='OCR finished.';
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='OCR failed. Check console/logs or try with a smaller image.';
+      status.className='status error';
+      bar.style.display='none';
+    }
+  }
+
+  async function copyOcrText(){
+    const txt=document.getElementById('ocr-output').value;
+    if(!txt){alert('No text to copy.');return;}
+    try{
+      await navigator.clipboard.writeText(txt);
+      alert('Copied to clipboard.');
+    }catch{
+      alert('Could not copy automatically. Please select and copy manually.');
+    }
+  }
+
+  // ---------- 6. PDF COMPRESSOR ----------
+  async function compressPdf(){
+    const input=document.getElementById('pdfc-input');
+    const file=input.files[0];
+    const status=document.getElementById('pdfc-status');
+    const link=document.getElementById('pdfc-download');
+    link.style.display='none';link.href='#';
+    if(!file){
+      status.textContent='Please select a PDF file.';
+      status.className='status error';
+      return;
+    }
+    status.textContent='Loading PDF...';
+    status.className='status';
+    try{
+      const preset=document.getElementById('pdfc-quality').value;
+      let scale=1,quality=0.8;
+      if(preset==='high'){scale=1;quality=0.9;}
+      else if(preset==='medium'){scale=0.9;quality=0.75;}
+      else{scale=0.8;quality=0.6;}
+      const arrayBuffer=await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+      const pageCount=pdf.numPages;
+      status.textContent=`Rendering ${pageCount} page(s)... this may take a while.`;
+      const newDoc = await PDFDocument.create();
+      for(let i=1;i<=pageCount;i++){
+        status.textContent=`Rendering page ${i} of ${pageCount}...`;
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({scale:scale});
+        const canvas=document.createElement('canvas');
+        const ctx=canvas.getContext('2d');
+        canvas.width=viewport.width;
+        canvas.height=viewport.height;
+        await page.render({canvasContext:ctx,viewport}).promise;
+        const dataURL=canvas.toDataURL('image/jpeg',quality);
+        const bytes=dataURLToUint8Array(dataURL);
+        const embedded=await newDoc.embedJpg(bytes);
+        const p=newDoc.addPage([embedded.width,embedded.height]);
+        p.drawImage(embedded,{x:0,y:0,width:embedded.width,height:embedded.height});
+      }
+      status.textContent='Building compressed PDF...';
+      const newBytes=await newDoc.save();
+      const blob=new Blob([newBytes],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      link.href=url;
+      link.style.display='inline-flex';
+      link.onclick=()=>{setTimeout(()=>URL.revokeObjectURL(url),2000);};
+      status.textContent=`Done. Original: ${bytesToKB(file.size)} KB • Compressed: ${bytesToKB(blob.size)} KB`;
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Compression failed. PDF may be too complex or large for browser processing.';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 7. MERGE PDF ----------
+  let mergePdfsFiles=[];
+  document.getElementById('merge-input').addEventListener('change',(e)=>{
+    const files=Array.from(e.target.files||[]);
+    mergePdfsFiles = mergePdfsFiles.concat(files);
+    renderMergeList();
+  });
+  function renderMergeList(){
+    const list=document.getElementById('merge-list');
+    list.innerHTML='';
+    if(!mergePdfsFiles.length){
+      list.innerHTML='<div class="hint">No PDFs selected yet.</div>';
+      return;
+    }
+    mergePdfsFiles.forEach((file,idx)=>{
+      const item=document.createElement('div');
+      item.className='thumb-item';
+      const icon=document.createElement('div');
+      icon.className='pill-small';
+      icon.textContent='PDF';
+      const meta=document.createElement('div');
+      meta.className='thumb-meta';
+      const name=document.createElement('div');
+      name.textContent=file.name;
+      const size=document.createElement('small');
+      size.textContent=bytesToKB(file.size)+' KB';
+      meta.appendChild(name);meta.appendChild(size);
+      const actions=document.createElement('div');
+      actions.className='thumb-actions';
+      const up=document.createElement('button');
+      up.className='icon-btn';up.textContent='↑';up.disabled=idx===0;
+      up.onclick=()=>{swapInArray(mergePdfsFiles,idx,idx-1);renderMergeList();};
+      const down=document.createElement('button');
+      down.className='icon-btn';down.textContent='↓';down.disabled=idx===mergePdfsFiles.length-1;
+      down.onclick=()=>{swapInArray(mergePdfsFiles,idx,idx+1);renderMergeList();};
+      const del=document.createElement('button');
+      del.className='icon-btn';del.textContent='✕';
+      del.onclick=()=>{mergePdfsFiles.splice(idx,1);renderMergeList();};
+      actions.appendChild(up);actions.appendChild(down);actions.appendChild(del);
+      item.appendChild(icon);item.appendChild(meta);item.appendChild(actions);
+      list.appendChild(item);
+    });
+  }
+
+  async function mergePdfs(){
+    const status=document.getElementById('merge-status');
+    const link=document.getElementById('merge-download');
+    link.style.display='none';link.href='#';
+    if(!mergePdfsFiles.length){
+      status.textContent='Please add at least two PDFs.';
+      status.className='status error';
+      return;
+    }
+    try{
+      status.textContent='Merging PDFs...';
+      status.className='status';
+      const merged = await PDFDocument.create();
+      for(let i=0;i<mergePdfsFiles.length;i++){
+        status.textContent=`Merging file ${i+1} of ${mergePdfsFiles.length}...`;
+        const file=mergePdfsFiles[i];
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const srcDoc = await PDFDocument.load(bytes);
+        const indices = srcDoc.getPageIndices();
+        const pages = await merged.copyPages(srcDoc,indices);
+        pages.forEach(p=>merged.addPage(p));
+      }
+      const outBytes=await merged.save();
+      const blob=new Blob([outBytes],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      link.href=url;
+      link.style.display='inline-flex';
+      link.onclick=()=>{setTimeout(()=>URL.revokeObjectURL(url),2000);};
+      status.textContent=`Done. Pages merged: ${mergePdfsFiles.length} file(s).`;
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Merge failed. Check PDF files and try again.';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 8. PDF TO IMAGE ----------
+  async function pdfToImages(){
+    const input=document.getElementById('p2i-input');
+    const file=input.files[0];
+    const fromEl=document.getElementById('p2i-from');
+    const toEl=document.getElementById('p2i-to');
+    const type=document.getElementById('p2i-type').value;
+    const status=document.getElementById('p2i-status');
+    const gallery=document.getElementById('p2i-gallery');
+    gallery.innerHTML='';
+    if(!file){
+      status.textContent='Please select a PDF.';
+      status.className='status error';
+      return;
+    }
+    try{
+      const arrayBuffer=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+      const total=pdf.numPages;
+      let from=parseInt(fromEl.value)||1;
+      let to=parseInt(toEl.value)||total;
+      from=Math.max(1,Math.min(from,total));
+      to=Math.max(from,Math.min(to,total));
+      status.textContent=`Rendering pages ${from} to ${to}...`;
+      status.className='status';
+      for(let pageNum=from;pageNum<=to;pageNum++){
+        const page=await pdf.getPage(pageNum);
+        const viewport=page.getViewport({scale:1});
+        const canvas=document.createElement('canvas');
+        const ctx=canvas.getContext('2d');
+        canvas.width=viewport.width;
+        canvas.height=viewport.height;
+        await page.render({canvasContext:ctx,viewport}).promise;
+        const dataURL=canvas.toDataURL('image/'+type,0.9);
+        const blob=blobFromDataURL(dataURL);
+        const url=URL.createObjectURL(blob);
+
+        const card=document.createElement('div');
+        card.className='section';
+        const title=document.createElement('div');
+        title.className='section-title';
+        title.textContent='Page '+pageNum;
+        const img=document.createElement('img');
+        img.src=url;
+        img.className='preview-img mt-xs';
+        const a=document.createElement('a');
+        a.className='download-link';
+        a.href=url;
+        a.download=`page-${pageNum}.${type==='png'?'png':'jpg'}`;
+        a.textContent='⬇ Download image';
+        card.appendChild(title);
+        card.appendChild(img);
+        card.appendChild(a);
+        gallery.appendChild(card);
+      }
+      status.textContent='Pages rendered. Scroll down to download images.';
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Conversion failed. PDF may be too heavy for this device.';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 9. IMAGE FORMAT CONVERTER ----------
+  document.getElementById('fmt-quality').addEventListener('input',(e)=>{
+    document.getElementById('fmt-quality-label').textContent=Math.round(parseFloat(e.target.value)*100);
+  });
+
+  let fmtImageFile=null;
+  document.getElementById('fmt-input').addEventListener('change', async (e)=>{
+    const file=e.target.files[0];
+    const preview=document.getElementById('fmt-preview');
+    const status=document.getElementById('fmt-status');
+    document.getElementById('fmt-download').style.display='none';
+    if(!file){preview.src='';status.textContent='';return;}
+    fmtImageFile=file;
+    preview.src=await readFileAsDataURL(file);
+    status.textContent=`Selected: ${file.name} (${bytesToKB(file.size)} KB)`;
+    status.className='status';
+  });
+
+  async function convertFormat(){
+    const file=fmtImageFile;
+    const outFmt=document.getElementById('fmt-output').value;
+    const q=parseFloat(document.getElementById('fmt-quality').value)||0.85;
+    const status=document.getElementById('fmt-status');
+    const preview=document.getElementById('fmt-preview');
+    const link=document.getElementById('fmt-download');
+    link.style.display='none';
+    if(!file){
+      status.textContent='Please select an image first.';
+      status.className='status error';
+      return;
+    }
+    try{
+      status.textContent='Converting...';
+      status.className='status';
+      const img=await loadImageFromFile(file);
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width;
+      canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      const mime=outFmt;
+      const needQuality = (mime==='image/jpeg' || mime==='image/webp');
+      const dataURL=canvas.toDataURL(mime,needQuality?q:undefined);
+      const blob=blobFromDataURL(dataURL);
+      const url=URL.createObjectURL(blob);
+      preview.src=url;
+      let ext='png';
+      if(mime==='image/jpeg')ext='jpg';
+      else if(mime==='image/webp')ext='webp';
+      link.href=url;
+      link.download=`converted.${ext}`;
+      link.style.display='inline-flex';
+      status.textContent=`Converted size: ${bytesToKB(blob.size)} KB`;
+      status.className='status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Conversion failed (format may not be supported on this browser).';
+      status.className='status error';
+    }
+  }
+
+  // ---------- 10. AUDIO TO TEXT DEMO ----------
+  document.getElementById('audio-input').addEventListener('change',(e)=>{
+    const file=e.target.files[0];
+    const status=document.getElementById('audio-status');
+    if(!file){status.textContent='';return;}
+    status.textContent=`Selected: ${file.name} (${bytesToKB(file.size)} KB). This demo does NOT transcribe audio.`;
+    status.className='status';
+  });
+  async function copyAudioText(){
+    const txt=document.getElementById('audio-notes').value;
+    if(!txt){alert('No text to copy.');return;}
+    try{
+      await navigator.clipboard.writeText(txt);
+      alert('Copied to clipboard.');
+    }catch{
+      alert('Could not copy automatically. Please copy manually.');
+    }
+  }
+
+  // ---------- 11. SIGNATURE PAD ----------
+  const sigCanvas=document.getElementById('signature-canvas');
+  const sigCtx=sigCanvas.getContext('2d');
+  let isDrawing=false;
+  let lastX=0,lastY=0;
+
+  function resizeSignatureCanvas(){
+    const rect=sigCanvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    sigCanvas.width=rect.width*dpr;
+    sigCanvas.height=rect.height*dpr;
+    sigCtx.scale(dpr,dpr);
+    sigCtx.lineCap='round';
+    sigCtx.lineJoin='round';
+    sigCtx.lineWidth=2.2;
+    sigCtx.strokeStyle='#e5e7eb';
+  }
+  function getSigPos(e){
+    const rect=sigCanvas.getBoundingClientRect();
+    if(e.touches && e.touches[0]){
+      return{
+        x:e.touches[0].clientX-rect.left,
+        y:e.touches[0].clientY-rect.top
+      };
+    }
+    return{
+      x:e.clientX-rect.left,
+      y:e.clientY-rect.top
+    };
+  }
+  function startSig(e){
+    e.preventDefault();
+    isDrawing=true;
+    const pos=getSigPos(e);
+    lastX=pos.x;lastY=pos.y;
+  }
+  function moveSig(e){
+    if(!isDrawing)return;
+    e.preventDefault();
+    const pos=getSigPos(e);
+    sigCtx.beginPath();
+    sigCtx.moveTo(lastX,lastY);
+    sigCtx.lineTo(pos.x,pos.y);
+    sigCtx.stroke();
+    lastX=pos.x;lastY=pos.y;
+  }
+  function endSig(e){
+    if(!isDrawing)return;
+    e.preventDefault();
+    isDrawing=false;
+  }
+  function clearSignature(){
+    const rect=sigCanvas.getBoundingClientRect();
+    sigCtx.clearRect(0,0,rect.width,rect.height);
+  }
+  function downloadSignature(transparent){
+    const rect=sigCanvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    const temp=document.createElement('canvas');
+    temp.width=rect.width*dpr;
+    temp.height=rect.height*dpr;
+    const tctx=temp.getContext('2d');
+    tctx.scale(dpr,dpr);
+    if(!transparent){
+      tctx.fillStyle='#ffffff';
+      tctx.fillRect(0,0,rect.width,rect.height);
+    }
+    tctx.drawImage(sigCanvas,0,0,rect.width,rect.height);
+    temp.toBlob(blob=>{
+      if(!blob)return;
+      downloadBlob(blob, transparent?'signature-transparent.png':'signature.png');
+    },'image/png');
+  }
+
+  sigCanvas.addEventListener('mousedown',startSig);
+  sigCanvas.addEventListener('mousemove',moveSig);
+  sigCanvas.addEventListener('mouseup',endSig);
+  sigCanvas.addEventListener('mouseleave',endSig);
+  sigCanvas.addEventListener('touchstart',startSig,{passive:false});
+  sigCanvas.addEventListener('touchmove',moveSig,{passive:false});
+  sigCanvas.addEventListener('touchend',endSig);
+
+  window.addEventListener('load',resizeSignatureCanvas);
+
+  // ---------- 12. PHOTO ENHANCER ----------
+  let enhanceImg=null;
+  const enhanceCanvas=document.getElementById('enhance-canvas');
+  const enhanceCtx=enhanceCanvas.getContext('2d');
+
+  document.getElementById('enhance-bright').addEventListener('input',(e)=>{
+    document.getElementById('enhance-bright-label').textContent=e.target.value;
+  });
+  document.getElementById('enhance-contrast').addEventListener('input',(e)=>{
+    document.getElementById('enhance-contrast-label').textContent=e.target.value;
+  });
+  document.getElementById('enhance-input').addEventListener('change', async (e)=>{
+    const file=e.target.files[0];
+    const original=document.getElementById('enhance-original');
+    const link=document.getElementById('enhance-download');
+    link.style.display='none';
+    if(!file){original.src='';enhanceCanvas.width=0;enhanceCanvas.height=0;return;}
+    const url=await readFileAsDataURL(file);
+    enhanceImg=await loadImageFromDataURL(url);
+    original.src=url;
+    enhanceCanvas.width=enhanceImg.width;
+    enhanceCanvas.height=enhanceImg.height;
+    enhanceCtx.drawImage(enhanceImg,0,0);
+  });
+
+  function applyEnhance(){
+    if(!enhanceImg){alert('Select an image first.');return;}
+    const bright=parseInt(document.getElementById('enhance-bright').value)||0;
+    const contrast=parseInt(document.getElementById('enhance-contrast').value)||0;
+    enhanceCanvas.width=enhanceImg.width;
+    enhanceCanvas.height=enhanceImg.height;
+    enhanceCtx.drawImage(enhanceImg,0,0);
+    const imgData=enhanceCtx.getImageData(0,0,enhanceCanvas.width,enhanceCanvas.height);
+    const data=imgData.data;
+    const b = bright; // -100..100
+    const c = (contrast/100)+1; // factor
+    const intercept = 128*(1-c);
+    for(let i=0;i<data.length;i+=4){
+      data[i] = c*data[i]+intercept + b;
+      data[i+1] = c*data[i+1]+intercept + b;
+      data[i+2] = c*data[i+2]+intercept + b;
+    }
+    for(let i=0;i<data.length;i+=4){
+      data[i]=Math.max(0,Math.min(255,data[i]));
+      data[i+1]=Math.max(0,Math.min(255,data[i+1]));
+      data[i+2]=Math.max(0,Math.min(255,data[i+2]));
+    }
+    enhanceCtx.putImageData(imgData,0,0);
+    enhanceCanvas.toBlob(blob=>{
+      if(!blob)return;
+      const url=URL.createObjectURL(blob);
+      const link=document.getElementById('enhance-download');
+      link.href=url;
+      link.style.display='inline-flex';
+    },'image/png');
+  }
+  function autoEnhance(){
+    document.getElementById('enhance-bright').value=10;
+    document.getElementById('enhance-contrast').value=20;
+    document.getElementById('enhance-bright-label').textContent='10';
+    document.getElementById('enhance-contrast-label').textContent='20';
+    applyEnhance();
+  }
+
+  // ---------- 13. ID PHOTO MAKER ----------
+  let idImg=null;
+  let idScale=1;
+  let crop = {x:0,y:0,w:0,h:0};
+  let dragging=false;
+  let dragOffset={x:0,y:0};
+
+  const idContainer=document.getElementById('id-crop-container');
+  const idImgEl=document.getElementById('id-img');
+  const idCropRect=document.getElementById('id-crop-rect');
+
+  document.getElementById('id-input').addEventListener('change', async (e)=>{
+    const file=e.target.files[0];
+    const status=document.getElementById('id-status');
+    document.getElementById('id-download').style.display='none';
+    if(!file){idContainer.style.display='none';status.textContent='';return;}
+    try{
+      const url=await readFileAsDataURL(file);
+      idImg=await loadImageFromDataURL(url);
+      idImgEl.src=url;
+      idContainer.style.display='block';
+      status.textContent='Image loaded. Adjust crop box over your face.';
+      status.className='status';
+      setTimeout(initIdCrop,50);
+    }catch(err){
+      console.error(err);
+      status.textContent='Could not load image.';
+      status.className='status error';
+    }
+  });
+
+  function initIdCrop(){
+    if(!idImg)return;
+    const rect=idContainer.getBoundingClientRect();
+    const imgRect=idImgEl.getBoundingClientRect();
+    idScale=idImg.width/imgRect.width;
+    const preset=document.getElementById('id-preset').value.split('x');
+    const pw=parseInt(preset[0]),ph=parseInt(preset[1]);
+    const aspect=pw/ph;
+    let cropW=imgRect.width*0.5;
+    let cropH=cropW/aspect;
+    if(cropH>imgRect.height*0.7){
+      cropH=imgRect.height*0.7;
+      cropW=cropH*aspect;
+    }
+    crop.w=cropW;
+    crop.h=cropH;
+    crop.x=imgRect.left-rect.left + (imgRect.width-cropW)/2;
+    crop.y=imgRect.top-rect.top + (imgRect.height-cropH)/3;
+    updateCropRect();
+  }
+  function updateCropRect(){
+    idCropRect.style.left=crop.x+'px';
+    idCropRect.style.top=crop.y+'px';
+    idCropRect.style.width=crop.w+'px';
+    idCropRect.style.height=crop.h+'px';
+  }
+
+  idCropRect.addEventListener('mousedown',startDrag);
+  idCropRect.addEventListener('touchstart',startDrag,{passive:false});
+  window.addEventListener('mousemove',onDrag);
+  window.addEventListener('touchmove',onDrag,{passive:false});
+  window.addEventListener('mouseup',endDrag);
+  window.addEventListener('touchend',endDrag);
+
+  function startDrag(e){
+    e.preventDefault();
+    dragging=true;
+    const pos=getDragPos(e);
+    dragOffset.x=pos.x-crop.x;
+    dragOffset.y=pos.y-crop.y;
+  }
+  function getDragPos(e){
+    const rect=idContainer.getBoundingClientRect();
+    if(e.touches && e.touches[0]){
+      return{
+        x:e.touches[0].clientX-rect.left,
+        y:e.touches[0].clientY-rect.top
+      };
+    }
+    return{
+      x:e.clientX-rect.left,
+      y:e.clientY-rect.top
+    };
+  }
+  function onDrag(e){
+    if(!dragging)return;
+    e.preventDefault();
+    const pos=getDragPos(e);
+    const imgRect=idImgEl.getBoundingClientRect();
+    const contRect=idContainer.getBoundingClientRect();
+    const minX=imgRect.left-contRect.left;
+    const minY=imgRect.top-contRect.top;
+    const maxX=minX+imgRect.width-crop.w;
+    const maxY=minY+imgRect.height-crop.h;
+    crop.x=Math.min(Math.max(pos.x-dragOffset.x,minX),maxX);
+    crop.y=Math.min(Math.max(pos.y-dragOffset.y,minY),maxY);
+    updateCropRect();
+  }
+  function endDrag(e){
+    if(!dragging)return;
+    e.preventDefault();
+    dragging=false;
+  }
+
+  async function generateIdPhoto(){
+    const status=document.getElementById('id-status');
+    const link=document.getElementById('id-download');
+    link.style.display='none';
+    if(!idImg){
+      status.textContent='Please select a portrait image first.';
+      status.className='status error';
+      return;
+    }
+    const preset=document.getElementById('id-preset').value.split('x');
+    const pw=parseInt(preset[0]),ph=parseInt(preset[1]);
+    const bg=document.getElementById('id-bg').value;
+    const contRect=idContainer.getBoundingClientRect();
+    const imgRect=idImgEl.getBoundingClientRect();
+    const relX=crop.x - (imgRect.left-contRect.left);
+    const relY=crop.y - (imgRect.top-contRect.top);
+    const srcX=relX*idScale;
+    const srcY=relY*idScale;
+    const srcW=crop.w*idScale;
+    const srcH=crop.h*idScale;
+
+    try{
+      const canvas=document.createElement('canvas');
+      canvas.width=pw;canvas.height=ph;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle=bg;
+      ctx.fillRect(0,0,pw,ph);
+      ctx.drawImage(idImg,srcX,srcY,srcW,srcH,0,0,pw,ph);
+      canvas.toBlob(blob=>{
+        if(!blob){
+          status.textContent='Could not build ID photo.';
+          status.className='status error';
+          return;
+        }
+        const url=URL.createObjectURL(blob);
+        link.href=url;
+        link.style.display='inline-flex';
+        status.textContent='ID photo ready. Download below.';
+        status.className='status success';
+      },'image/png');
+    }catch(err){
+      console.error(err);
+      status.textContent='ID photo generation failed.';
+      status.className='status error';
+    }
+  }
+
+  // Adjust crop if preset changes
+  document.getElementById('id-preset').addEventListener('change',()=>{
+    if(idImg){initIdCrop();}
+  });
+
+</script>
+</body>
+</html>
