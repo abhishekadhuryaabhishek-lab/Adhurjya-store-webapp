@@ -555,26 +555,17 @@
     </div>
 
     <div class="tool-grid">
-            <div class="tool-card">
+      <div class="tool-card">
         <h3>Doc Scanner Pro</h3>
         <p>Turn camera photos into clean, high-contrast scanned PDFs.</p>
         <div class="tool-tags">
           <span class="tool-tag">Scan</span>
-          <span class="tool-tag">Clean B/W</span>
+          <span class="tool-tag">Magic Color</span>
         </div>
         <button class="btn" onclick="openTool('doc-scan')">Open Tool</button>
       </div>
 
       <div class="tool-card">
-        <h3>PDF Form Filler + Signature</h3>
-        <p>Fill forms, add text and your own signature safely.</p>
-        <div class="tool-tags">
-          <span class="tool-tag">Form Fill</span>
-          <span class="tool-tag">Signature</span>
-        </div>
-        <button class="btn" onclick="openTool('pdf-form')">Open Tool</button>
-      </div>
- <div class="tool-card">
         <h3>Photo → PDF Converter</h3>
         <p>Combine multiple photos into a single high-quality PDF with size-friendly compression.</p>
         <div class="tool-tags">
@@ -583,6 +574,7 @@
         </div>
         <button class="btn" onclick="openTool('photo-pdf')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Photo Size Compressor</h3>
         <p>Shrink image file size with adjustable quality and max dimensions.</p>
@@ -591,6 +583,7 @@
         </div>
         <button class="btn" onclick="openTool('photo-compress')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Image Resizer</h3>
         <p>Resize images to exact width/height while keeping aspect ratio if needed.</p>
@@ -599,6 +592,7 @@
         </div>
         <button class="btn" onclick="openTool('image-resize')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Background Remover</h3>
         <p>Remove solid-color backgrounds or smart cutout person like Picsart.</p>
@@ -608,14 +602,17 @@
         </div>
         <button class="btn" onclick="openTool('bg-remove')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Image to Text (OCR)</h3>
-        <p>Extract text from images using Tesseract.js — English + optional Hindi/Bengali.</p>
+        <p>Extract text from images or PDFs using Tesseract.js — English + Hindi/Bengali.</p>
         <div class="tool-tags">
           <span class="tool-tag">OCR</span>
+          <span class="tool-tag">Image + PDF</span>
         </div>
         <button class="btn" onclick="openTool('ocr')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>PDF Compressor</h3>
         <p>Re-render PDF pages as compressed images to reduce size.</p>
@@ -624,6 +621,7 @@
         </div>
         <button class="btn" onclick="openTool('pdf-compress')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Merge PDF</h3>
         <p>Combine multiple PDF files into a single document.</p>
@@ -632,6 +630,7 @@
         </div>
         <button class="btn" onclick="openTool('pdf-merge')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>PDF to Image</h3>
         <p>Convert PDF pages into downloadable images.</p>
@@ -640,6 +639,7 @@
         </div>
         <button class="btn" onclick="openTool('pdf-to-image')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>Image Format Converter</h3>
         <p>Convert between JPG, PNG and WEBP formats.</p>
@@ -648,6 +648,7 @@
         </div>
         <button class="btn" onclick="openTool('image-format')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>AI Photo Enhancer</h3>
         <p>Brightness, contrast, saturation & sharpness with Auto Enhance.</p>
@@ -656,6 +657,7 @@
         </div>
         <button class="btn" onclick="openTool('photo-enhance')">Open Tool</button>
       </div>
+
       <div class="tool-card">
         <h3>ID Photo Maker</h3>
         <p>Passport-style ID photo with background color & multi copies.</p>
@@ -915,176 +917,26 @@
           Restore subject
         </button>
       </div>
-
       <small class="hint">
         Tip: First run “Remove Background”, then use the brush on the preview
         canvas to erase/restore edges.
       </small>
     </div>
   </section>
-  <!-- 12. Doc Scanner Pro -->
-  <section id="panel-doc-scan" class="tool-panel">
-    <div class="tool-header">
-      <div>
-        <h2>Doc Scanner Pro</h2>
-        <p>Clean your document photos and save as a sharp PDF.</p>
-      </div>
-      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
-    </div>
 
-    <div class="section">
-      <div class="section-title">Source photo</div>
-      <div class="field">
-        <label>Select document photo</label>
-        <input id="scan-input" type="file" accept="image/*" />
-        <small>Use a straight photo with good light for best result.</small>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">Scan style</div>
-      <div class="flex flex-wrap gap-sm">
-        <label class="mode-pill">
-          <input type="radio" name="scan-mode" value="color" checked />
-          Clean Color
-        </label>
-        <label class="mode-pill">
-          <input type="radio" name="scan-mode" value="bw" />
-          Classic B/W
-        </label>
-        <label class="mode-pill">
-          <input type="radio" name="scan-mode" value="strong" />
-          Strong B/W (for faint text)
-        </label>
-      </div>
-      <div class="field mt-xs">
-        <label>Intensity</label>
-        <input id="scan-intensity" type="range" min="-40" max="40" value="10" />
-        <small>Higher = more contrast and whitening.</small>
-      </div>
-      <button class="btn mt-sm" onclick="scanExportPdf()">Scan & Save as PDF</button>
-      <div id="scan-status" class="status"></div>
-      <a id="scan-download" class="download-link" href="#" style="display:none;"
-         download="scanned-document.pdf">⬇ Download scanned PDF</a>
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-title">Preview</div>
-    <div class="preview-row">
-      <div style="flex:1;">
-        <div class="pill-small">Original</div>
-        <img id="scan-original" class="preview-img mt-xs" alt="" />
-      </div>
-      <div style="flex:1;">
-        <div class="pill-small">Scanned</div>
-        <canvas id="scan-canvas" class="preview-img mt-xs"></canvas>
-      </div>
-    </div>
-  </section>
-  <!-- 13. PDF Form Filler + Signature (SAFE MODE) -->
-  <section id="panel-pdf-form" class="tool-panel">
-    <div class="tool-header">
-      <div>
-        <h2>PDF Form Filler + Signature</h2>
-        <p>Fill forms, add text and your own handwritten signature. Current version fills one page at a time.</p>
-      </div>
-      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
-    </div>
-
-    <div class="section">
-      <div class="section-title">1) Load PDF</div>
-      <div class="field">
-        <label>Select PDF form</label>
-        <input id="form-pdf-input" type="file" accept="application/pdf" />
-        <small>This tool is for your own / authorized documents. Don’t create fake seals or govt docs.</small>
-      </div>
-      <div class="field flex gap-sm" style="align-items:flex-end;">
-        <div style="flex:1 1 120px;max-width:160px;">
-          <label>Page</label>
-          <input id="form-page" type="number" min="1" value="1" />
-        </div>
-        <button class="btn btn-outline" type="button" onclick="formPrevPage()">◀ Prev</button>
-        <button class="btn btn-outline" type="button" onclick="formNextPage()">Next ▶</button>
-        <span id="form-page-info" class="hint">No PDF loaded</span>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">2) Add text</div>
-      <div class="flex flex-wrap gap-sm">
-        <div class="field" style="flex:1 1 180px;min-width:180px;">
-          <label>Text</label>
-          <input id="form-text" type="text" placeholder="e.g. Your name" />
-        </div>
-        <div class="field" style="flex:1 1 120px;max-width:160px;">
-          <label>Font size</label>
-          <select id="form-font-size">
-            <option value="10">10 pt</option>
-            <option value="12" selected>12 pt</option>
-            <option value="14">14 pt</option>
-            <option value="16">16 pt</option>
-          </select>
-        </div>
-        <div class="field" style="flex:1 1 120px;max-width:160px;">
-          <label>Color</label>
-          <input id="form-font-color" type="color" value="#000000" />
-        </div>
-      </div>
-      <div class="hint mt-xs">
-        Click <strong>“Text mode”</strong> then tap on the PDF preview to place the text.
-      </div>
-      <div class="flex flex-wrap gap-sm mt-xs">
-        <button class="btn btn-outline" type="button" onclick="setFormMode('text')">Text mode</button>
-        <button class="btn btn-outline" type="button" onclick="setFormMode('none')">Stop placing</button>
-        <button class="btn btn-outline" type="button" onclick="formClearMarks()">Clear all marks</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">3) Signature pad (your own sign only)</div>
-      <div class="preview-row">
-        <div style="flex:1;">
-          <div class="pill-small">Draw your signature</div>
-          <canvas id="sign-pad" style="width:100%;max-width:260px;height:90px;border-radius:0.7rem;border:1px solid rgba(148,163,184,0.5);background:#020617;"></canvas>
-          <div class="flex gap-sm mt-xs">
-            <button class="btn btn-outline" type="button" onclick="signPadClear()">Clear</button>
-            <button class="btn btn-outline" type="button" onclick="setFormMode('sign')">Signature mode</button>
-          </div>
-          <small class="hint">
-            Use this only for your own authorized documents. Don’t upload / draw other people’s signature.
-          </small>
-        </div>
-        <div style="flex:1;">
-          <div class="pill-small">PDF preview (click to place)</div>
-          <canvas id="form-canvas" class="preview-img mt-xs"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <button class="btn" type="button" onclick="exportFilledPdf()">Export filled page as PDF</button>
-      <div id="form-status" class="status"></div>
-      <a id="form-download" class="download-link" href="#" style="display:none;" download="filled-form.pdf">
-        ⬇ Download filled PDF
-      </a>
-      <div class="hint mt-xs">
-        Current version exports the <strong>current page only</strong> as a flattened PDF (background + your text + sign).
-      </div>
-    </div>
-  </section>
   <!-- 5. OCR -->
   <section id="panel-ocr" class="tool-panel">
     <div class="tool-header">
       <div>
         <h2>Image to Text (OCR)</h2>
-        <p>Use Tesseract.js to extract text from images.</p>
+        <p>Use Tesseract.js to extract text from images or PDFs.</p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
     <div class="section">
       <div class="field">
-        <label>Select image with text</label>
-        <input id="ocr-input" type="file" accept="image/*" />
+        <label>Select image or PDF with text</label>
+        <input id="ocr-input" type="file" accept="image/*,application/pdf" />
       </div>
       <div class="field">
         <label>Language</label>
@@ -1102,7 +954,7 @@
       </div>
       <div class="section mt-md">
         <div class="section-title">Recognized text</div>
-        <textarea id="ocr-output" placeholder="Your extracted text will appear here..."></textarea>
+        <textarea id="ocr-output" placeholder="Your extracted text will appear here... (multi-page PDFs will be combined with page breaks)"></textarea>
         <button class="btn btn-outline mt-xs" onclick="copyOcrText()">Copy Text</button>
       </div>
     </div>
@@ -1344,6 +1196,66 @@
       <button class="btn mt-sm" onclick="generateIdPhoto()">Generate ID Photo Sheet</button>
       <div id="id-status" class="status"></div>
       <a id="id-download" class="download-link" href="#" style="display:none;" download="id-photos.png">⬇ Download ID photos sheet</a>
+    </div>
+  </section>
+
+  <!-- 12. Doc Scanner Pro -->
+  <section id="panel-doc-scan" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Doc Scanner Pro</h2>
+        <p>Clean your document photos and save as a sharp PDF.</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Source photo</div>
+      <div class="field">
+        <label>Select document photo</label>
+        <input id="scan-input" type="file" accept="image/*" />
+        <small>Use a straight photo with good light for best result.</small>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Scan style</div>
+      <div class="flex flex-wrap gap-sm">
+        <label class="mode-pill">
+          <input type="radio" name="scan-mode" value="magic" checked />
+          Magic Color
+        </label>
+        <label class="mode-pill">
+          <input type="radio" name="scan-mode" value="bw" />
+          Classic B/W
+        </label>
+        <label class="mode-pill">
+          <input type="radio" name="scan-mode" value="strong" />
+          Strong B/W (for faint text)
+        </label>
+      </div>
+      <div class="field mt-xs">
+        <label>Intensity</label>
+        <input id="scan-intensity" type="range" min="-40" max="40" value="10" />
+        <small>Higher = more contrast and whitening.</small>
+      </div>
+      <button class="btn mt-sm" onclick="scanExportPdf()">Scan & Save as PDF</button>
+      <div id="scan-status" class="status"></div>
+      <a id="scan-download" class="download-link" href="#" style="display:none;"
+         download="scanned-document.pdf">⬇ Download scanned PDF</a>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title">Preview</div>
+    <div class="preview-row">
+      <div style="flex:1;">
+        <div class="pill-small">Original</div>
+        <img id="scan-original" class="preview-img mt-xs" alt="" />
+      </div>
+      <div style="flex:1;">
+        <div class="pill-small">Scanned</div>
+        <canvas id="scan-canvas" class="preview-img mt-xs"></canvas>
+      </div>
     </div>
   </section>
 </main>
@@ -1956,7 +1868,7 @@
   bgCanvas.addEventListener('mousemove', bgMoveDraw);
   bgCanvas.addEventListener('touchmove', bgMoveDraw, { passive: false });
 
-  // ---------- 5. OCR ----------
+  // ---------- 5. OCR (IMAGE + PDF, PRE-PROCESSED) ----------
   async function runOcr(){
     const input=document.getElementById('ocr-input');
     const file=input.files[0];
@@ -1969,28 +1881,91 @@
     inner.style.width='0%';
     bar.style.display='none';
     if(!file){
-      status.textContent='Please select an image first.';
+      status.textContent='Please select an image or PDF first.';
       status.className='status error';
       return;
     }
-    status.textContent='Loading OCR engine and starting recognition...';
+    status.textContent='Loading OCR engine and preparing input...';
     status.className='status';
+    const T = window.Tesseract;
     try{
       bar.style.display='block';
-      const { Tesseract } = window;
-      const result = await Tesseract.recognize(file, lang, {
-        logger:m=>{
-          if(m.status==='recognizing text' && m.progress){
-            inner.style.width=(m.progress*100).toFixed(0)+'%';
-          }
+      if(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')){
+        // PDF OCR
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+        const totalPages = pdf.numPages;
+        let from = 1, to = totalPages;
+        let allText = [];
+        for(let pageNum=1; pageNum<=totalPages; pageNum++){
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({scale:2}); // higher DPI for better OCR
+          const canvas=document.createElement('canvas');
+          const ctx=canvas.getContext('2d');
+          canvas.width=viewport.width;
+          canvas.height=viewport.height;
+          await page.render({canvasContext:ctx,viewport}).promise;
+
+          status.textContent=`Running OCR on page ${pageNum} of ${totalPages}...`;
+          const result = await T.recognize(canvas, lang, {
+            logger:m=>{
+              if(m.status==='recognizing text' && m.progress){
+                const global = ((pageNum-1) + m.progress)/totalPages*100;
+                inner.style.width = global.toFixed(0)+'%';
+              }
+            }
+          });
+          allText.push(`--- Page ${pageNum} ---\n`+(result.data.text || '').trim());
         }
-      });
-      out.value=result.data.text || '';
-      status.textContent='OCR finished. Check and edit if needed.';
-      status.className='status success';
+        out.value = allText.join('\n\n');
+        status.textContent='OCR finished for all pages. Review and edit if needed.';
+        status.className='status success';
+      }else{
+        // IMAGE OCR with pre-processing
+        const dataURL = await readFileAsDataURL(file);
+        const img = await loadImageFromDataURL(dataURL);
+
+        // Preprocess: upscale to at least 1500px on longer side, grayscale, contrast
+        const maxDim = 1800;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height)) < 1
+          ? maxDim / Math.max(img.width, img.height)
+          : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+
+        const canvas=document.createElement('canvas');
+        const ctx=canvas.getContext('2d');
+        canvas.width=w;canvas.height=h;
+        ctx.drawImage(img,0,0,w,h);
+
+        let imgData = ctx.getImageData(0,0,w,h);
+        let d = imgData.data;
+        const c = 1.2; // mild contrast boost
+        const intercept = 128*(1-c);
+        for(let i=0;i<d.length;i+=4){
+          let r=d[i], g=d[i+1], b=d[i+2];
+          let grey = 0.299*r+0.587*g+0.114*b;
+          grey = c*grey + intercept + 5; // little brighten
+          grey = Math.max(0,Math.min(255,grey));
+          d[i]=d[i+1]=d[i+2]=grey;
+        }
+        ctx.putImageData(imgData,0,0);
+
+        status.textContent='Running OCR on image...';
+        const result = await T.recognize(canvas, lang, {
+          logger:m=>{
+            if(m.status==='recognizing text' && m.progress){
+              inner.style.width = (m.progress*100).toFixed(0)+'%';
+            }
+          }
+        });
+        out.value = result.data.text || '';
+        status.textContent='OCR finished. Check and edit if needed.';
+        status.className='status success';
+      }
     }catch(err){
       console.error(err);
-      status.textContent='OCR failed. Try a clearer image, or check that language data is available.';
+      status.textContent='OCR failed. Try a clearer scan, or check that language data is available.';
       status.className='status error';
       bar.style.display='none';
     }
@@ -2395,387 +2370,6 @@
     document.getElementById('enhance-sharp-label').textContent='30';
     applyEnhance();
   }
-  // ---------- 12. DOC SCANNER PRO ----------
-  let scanImg = null;
-  const scanCanvas = document.getElementById('scan-canvas');
-  const scanCtx = scanCanvas.getContext('2d');
-  const scanOriginal = document.getElementById('scan-original');
-
-  document.getElementById('scan-input').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    const status = document.getElementById('scan-status');
-    const link = document.getElementById('scan-download');
-    link.style.display = 'none';
-    if(!file){ scanImg=null; scanOriginal.src=''; scanCanvas.width=0;scanCanvas.height=0; status.textContent=''; return; }
-    try{
-      const url = await readFileAsDataURL(file);
-      scanImg = await loadImageFromDataURL(url);
-      scanOriginal.src = url;
-
-      // fit to reasonable size
-      const maxW = 900;
-      const ratio = Math.min(1, maxW / scanImg.width);
-      scanCanvas.width = Math.round(scanImg.width * ratio);
-      scanCanvas.height = Math.round(scanImg.height * ratio);
-      scanCtx.drawImage(scanImg,0,0,scanCanvas.width,scanCanvas.height);
-
-      applyDocScanFilter();
-      status.textContent = 'Photo loaded. Adjust style/intensity if needed, then export as PDF.';
-      status.className = 'status';
-    }catch(err){
-      console.error(err);
-      status.textContent = 'Could not load image.';
-      status.className = 'status error';
-    }
-  });
-
-  document.getElementById('scan-intensity').addEventListener('input', applyDocScanFilter);
-  document.querySelectorAll('input[name="scan-mode"]').forEach(el=>{
-    el.addEventListener('change', applyDocScanFilter);
-  });
-
-  function applyDocScanFilter(){
-    if(!scanImg || !scanCanvas.width) return;
-    const mode = document.querySelector('input[name="scan-mode"]:checked').value;
-    const intensity = parseInt(document.getElementById('scan-intensity').value)||0;
-
-    // redraw original
-    scanCtx.drawImage(scanImg,0,0,scanCanvas.width,scanCanvas.height);
-    let imgData = scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
-    let d = imgData.data;
-
-    // basic brightness/contrast
-    const baseContrast = (mode==='color'? 15 : 25) + intensity;
-    const c = (baseContrast/100)+1;
-    const intercept = 128*(1-c);
-    const bright = 10 + (mode==='strong'? 10:0);
-
-    for(let i=0;i<d.length;i+=4){
-      let r=d[i], g=d[i+1], b=d[i+2];
-
-      // brightness/contrast
-      r = c*r + intercept + bright;
-      g = c*g + intercept + bright;
-      b = c*b + intercept + bright;
-
-      if(mode!=='color'){
-        // grayscale
-        let grey = 0.299*r + 0.587*g + 0.114*b;
-        if(mode==='bw'){
-          // softer threshold
-          grey = grey > 150+intensity ? 255 : 0;
-        }else{
-          // strong B/W
-          grey = grey > 130+intensity ? 255 : 0;
-        }
-        r=g=b=grey;
-      }
-
-      d[i]=r; d[i+1]=g; d[i+2]=b;
-    }
-
-    // clamp
-    for(let i=0;i<d.length;i+=4){
-      d[i]=Math.max(0,Math.min(255,d[i]));
-      d[i+1]=Math.max(0,Math.min(255,d[i+1]));
-      d[i+2]=Math.max(0,Math.min(255,d[i+2]));
-    }
-
-    scanCtx.putImageData(imgData,0,0);
-  }
-
-  async function scanExportPdf(){
-    const status = document.getElementById('scan-status');
-    const link = document.getElementById('scan-download');
-    link.style.display='none';link.href='#';
-    if(!scanCanvas.width){
-      status.textContent='Please select a document photo first.';
-      status.className='status error';
-      return;
-    }
-    try{
-      status.textContent='Building scanned PDF...';
-      status.className='status';
-      const dataURL = scanCanvas.toDataURL('image/jpeg',0.85);
-      const bytes = dataURLToUint8Array(dataURL);
-      const pdfDoc = await PDFDocument.create();
-      const img = await pdfDoc.embedJpg(bytes);
-      const page = pdfDoc.addPage([img.width,img.height]);
-      page.drawImage(img,{x:0,y:0,width:img.width,height:img.height});
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes],{type:'application/pdf'});
-      const url = URL.createObjectURL(blob);
-      link.href = url;
-      link.style.display='inline-flex';
-      link.onclick = ()=>{ setTimeout(()=>URL.revokeObjectURL(url),2000); };
-      status.textContent = `Done. Estimated size: ${bytesToKB(blob.size)} KB`;
-      status.className = 'status success';
-    }catch(err){
-      console.error(err);
-      status.textContent='Scan export failed.';
-      status.className='status error';
-    }
-  }
-  // ---------- 13. PDF FORM FILLER + SIGNATURE (SAFE MODE) ----------
-  let formPdfDoc = null;
-  let formTotalPages = 0;
-  let formCurrentPage = 1;
-  let formBaseImageData = null;
-  let formMode = 'none'; // 'none' | 'text' | 'sign'
-  let formOverlays = []; // {type:'text', text,x,y,fontSize,color} | {type:'sign', img,x,y,w,h}
-
-  const formCanvas = document.getElementById('form-canvas');
-  const formCtx = formCanvas.getContext('2d');
-  const formStatus = document.getElementById('form-status');
-  const formDownload = document.getElementById('form-download');
-  const formPageInput = document.getElementById('form-page');
-  const formPageInfo = document.getElementById('form-page-info');
-
-  document.getElementById('form-pdf-input').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    formDownload.style.display='none';formDownload.href='#';
-    formStatus.textContent='';
-    if(!file){
-      formPdfDoc=null;
-      formTotalPages=0;
-      formCurrentPage=1;
-      formPageInfo.textContent='No PDF loaded';
-      formCanvas.width=0;formCanvas.height=0;
-      return;
-    }
-    try{
-      formStatus.textContent='Loading PDF...';
-      formStatus.className='status';
-      const buff = await file.arrayBuffer();
-      formPdfDoc = await pdfjsLib.getDocument({data:buff}).promise;
-      formTotalPages = formPdfDoc.numPages;
-      formCurrentPage = 1;
-      formPageInput.min = 1;
-      formPageInput.max = formTotalPages;
-      formPageInput.value = 1;
-      formPageInfo.textContent = `Page 1 of ${formTotalPages}`;
-      await renderFormPage();
-      formStatus.textContent='PDF loaded. Use page controls and click on preview to place text / sign.';
-      formStatus.className='status success';
-    }catch(err){
-      console.error(err);
-      formStatus.textContent='Could not load PDF.';
-      formStatus.className='status error';
-    }
-  });
-
-  async function renderFormPage(){
-    if(!formPdfDoc) return;
-    formOverlays = [];
-    formDownload.style.display='none';formDownload.href='#';
-    const page = await formPdfDoc.getPage(formCurrentPage);
-    const viewport = page.getViewport({scale:1.3});
-    formCanvas.width = viewport.width;
-    formCanvas.height = viewport.height;
-    formCtx.clearRect(0,0,formCanvas.width,formCanvas.height);
-    await page.render({canvasContext:formCtx,viewport}).promise;
-    formBaseImageData = formCtx.getImageData(0,0,formCanvas.width,formCanvas.height);
-    formPageInfo.textContent = `Page ${formCurrentPage} of ${formTotalPages}`;
-  }
-
-  function formPrevPage(){
-    if(!formPdfDoc) return;
-    if(formCurrentPage<=1) return;
-    formCurrentPage--;
-    formPageInput.value = formCurrentPage;
-    renderFormPage();
-  }
-  function formNextPage(){
-    if(!formPdfDoc) return;
-    if(formCurrentPage>=formTotalPages) return;
-    formCurrentPage++;
-    formPageInput.value = formCurrentPage;
-    renderFormPage();
-  }
-
-  formPageInput.addEventListener('change', ()=>{
-    if(!formPdfDoc) return;
-    let p = parseInt(formPageInput.value)||1;
-    p = Math.max(1,Math.min(formTotalPages,p));
-    formCurrentPage = p;
-    formPageInput.value = p;
-    renderFormPage();
-  });
-
-  function setFormMode(mode){
-    formMode = mode;
-    if(mode==='text'){
-      formStatus.textContent='Text mode: click on the PDF preview to place text.';
-      formStatus.className='status';
-    }else if(mode==='sign'){
-      formStatus.textContent='Signature mode: click on the PDF preview to place your signature.';
-      formStatus.className='status';
-    }else{
-      formStatus.textContent='Placement stopped.';
-      formStatus.className='status';
-    }
-  }
-
-  function formClearMarks(){
-    formOverlays = [];
-    if(formBaseImageData){
-      formCtx.putImageData(formBaseImageData,0,0);
-    }
-    formDownload.style.display='none';formDownload.href='#';
-  }
-
-  function redrawFormOverlays(){
-    if(!formBaseImageData) return;
-    formCtx.putImageData(formBaseImageData,0,0);
-    formCtx.textBaseline = 'top';
-    formOverlays.forEach(ov=>{
-      if(ov.type==='text'){
-        formCtx.font = `${ov.fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-        formCtx.fillStyle = ov.color;
-        formCtx.fillText(ov.text, ov.x, ov.y);
-      }else if(ov.type==='sign' && ov.img){
-        formCtx.drawImage(ov.img, ov.x, ov.y, ov.w, ov.h);
-      }
-    });
-  }
-
-  formCanvas.addEventListener('click',(e)=>{
-    if(!formBaseImageData) return;
-    if(formMode==='none') return;
-    const rect = formCanvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (formCanvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (formCanvas.height / rect.height);
-
-    if(formMode==='text'){
-      const text = (document.getElementById('form-text').value || '').trim();
-      if(!text){
-        alert('Enter text first.'); return;
-      }
-      const fontSize = parseInt(document.getElementById('form-font-size').value)||12;
-      const color = document.getElementById('form-font-color').value || '#000000';
-      formOverlays.push({type:'text', text, x, y, fontSize, color});
-      redrawFormOverlays();
-    }else if(formMode==='sign'){
-      if(!signPadHasDrawing){
-        alert('Draw your signature in the pad first.'); return;
-      }
-      const url = signPadCanvas.toDataURL('image/png');
-      const img = new Image();
-      img.onload = ()=>{
-        // place at smaller size than pad
-        const scale = 0.5;
-        const w = img.width*scale;
-        const h = img.height*scale;
-        formOverlays.push({type:'sign', img, x, y, w, h});
-        redrawFormOverlays();
-      };
-      img.src = url;
-    }
-  });
-
-  async function exportFilledPdf(){
-    if(!formBaseImageData){
-      formStatus.textContent='Load a PDF and render a page first.';
-      formStatus.className='status error';
-      return;
-    }
-    try{
-      formStatus.textContent='Building filled PDF page...';
-      formStatus.className='status';
-      // overlay already drawn on canvas
-      const dataURL = formCanvas.toDataURL('image/jpeg',0.9);
-      const bytes = dataURLToUint8Array(dataURL);
-      const pdfDoc = await PDFDocument.create();
-      const bg = await pdfDoc.embedJpg(bytes);
-      const page = pdfDoc.addPage([bg.width,bg.height]);
-      page.drawImage(bg,{x:0,y:0,width:bg.width,height:bg.height});
-      const outBytes = await pdfDoc.save();
-      const blob = new Blob([outBytes],{type:'application/pdf'});
-      const url = URL.createObjectURL(blob);
-      formDownload.href = url;
-      formDownload.style.display='inline-flex';
-      formDownload.onclick = ()=>{ setTimeout(()=>URL.revokeObjectURL(url),2000); };
-      formStatus.textContent='Done. Filled page ready as a new PDF.';
-      formStatus.className='status success';
-    }catch(err){
-      console.error(err);
-      formStatus.textContent='Export failed. Try with a smaller PDF page.';
-      formStatus.className='status error';
-    }
-  }
-
-  // ---------- SIGNATURE PAD ----------
-  const signPadCanvas = document.getElementById('sign-pad');
-  const signPadCtx = signPadCanvas.getContext('2d');
-  let signDrawing = false;
-  let signPadHasDrawing = false;
-
-  function resizeSignPadIfNeeded(){
-    // make internal canvas match CSS size
-    const rect = signPadCanvas.getBoundingClientRect();
-    if(signPadCanvas.width !== rect.width || signPadCanvas.height !== rect.height){
-      signPadCanvas.width = rect.width;
-      signPadCanvas.height = rect.height;
-      signPadCtx.fillStyle = '#020617';
-      signPadCtx.fillRect(0,0,signPadCanvas.width,signPadCanvas.height);
-    }
-  }
-  resizeSignPadIfNeeded();
-  window.addEventListener('resize', resizeSignPadIfNeeded);
-
-  function signPadStart(e){
-    e.preventDefault();
-    resizeSignPadIfNeeded();
-    signDrawing = true;
-    signPadHasDrawing = true;
-    const pos = signPadPos(e);
-    signPadCtx.beginPath();
-    signPadCtx.moveTo(pos.x,pos.y);
-  }
-  function signPadMove(e){
-    if(!signDrawing) return;
-    e.preventDefault();
-    const pos = signPadPos(e);
-    signPadCtx.lineWidth = 2;
-    signPadCtx.lineCap = 'round';
-    signPadCtx.strokeStyle = '#e5e7eb';
-    signPadCtx.lineTo(pos.x,pos.y);
-    signPadCtx.stroke();
-  }
-  function signPadEnd(e){
-    if(!signDrawing) return;
-    e.preventDefault();
-    signDrawing = false;
-  }
-  function signPadPos(e){
-    const rect = signPadCanvas.getBoundingClientRect();
-    let clientX, clientY;
-    if(e.touches && e.touches[0]){
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    }else{
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    return {
-      x:(clientX-rect.left)*(signPadCanvas.width/rect.width),
-      y:(clientY-rect.top)*(signPadCanvas.height/rect.height)
-    };
-  }
-
-  function signPadClear(){
-    resizeSignPadIfNeeded();
-    signPadCtx.fillStyle = '#020617';
-    signPadCtx.fillRect(0,0,signPadCanvas.width,signPadCanvas.height);
-    signPadHasDrawing = false;
-  }
-
-  signPadCanvas.addEventListener('mousedown',signPadStart);
-  signPadCanvas.addEventListener('mousemove',signPadMove);
-  window.addEventListener('mouseup',signPadEnd);
-  signPadCanvas.addEventListener('touchstart',signPadStart,{passive:false});
-  signPadCanvas.addEventListener('touchmove',signPadMove,{passive:false});
-  window.addEventListener('touchend',signPadEnd);
 
   // ---------- 11. ID PHOTO MAKER ----------
   let idImg=null;
@@ -2961,6 +2555,151 @@
   document.getElementById('id-preset').addEventListener('change',()=>{
     if(idImg){initIdCrop();}
   });
+
+  // ---------- 12. DOC SCANNER PRO (MAGIC COLOR) ----------
+  let scanImg = null;
+  const scanCanvas = document.getElementById('scan-canvas');
+  const scanCtx = scanCanvas.getContext('2d');
+  const scanOriginal = document.getElementById('scan-original');
+
+  document.getElementById('scan-input').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    const status = document.getElementById('scan-status');
+    const link = document.getElementById('scan-download');
+    link.style.display = 'none';
+    if(!file){ scanImg=null; scanOriginal.src=''; scanCanvas.width=0;scanCanvas.height=0; status.textContent=''; return; }
+    try{
+      const url = await readFileAsDataURL(file);
+      scanImg = await loadImageFromDataURL(url);
+      scanOriginal.src = url;
+
+      // fit to reasonable size
+      const maxW = 900;
+      const ratio = Math.min(1, maxW / scanImg.width);
+      scanCanvas.width = Math.round(scanImg.width * ratio);
+      scanCanvas.height = Math.round(scanImg.height * ratio);
+      scanCtx.drawImage(scanImg,0,0,scanCanvas.width,scanCanvas.height);
+
+      applyDocScanFilter();
+      status.textContent = 'Photo loaded. Adjust style/intensity if needed, then export as PDF.';
+      status.className = 'status';
+    }catch(err){
+      console.error(err);
+      status.textContent = 'Could not load image.';
+      status.className = 'status error';
+    }
+  });
+
+  document.getElementById('scan-intensity').addEventListener('input', applyDocScanFilter);
+  document.querySelectorAll('input[name="scan-mode"]').forEach(el=>{
+    el.addEventListener('change', applyDocScanFilter);
+  });
+
+  function applyDocScanFilter(){
+    if(!scanImg || !scanCanvas.width) return;
+    const mode = document.querySelector('input[name="scan-mode"]:checked').value;
+    const intensity = parseInt(document.getElementById('scan-intensity').value)||0;
+
+    // redraw original
+    scanCtx.drawImage(scanImg,0,0,scanCanvas.width,scanCanvas.height);
+    let imgData = scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height);
+    let d = imgData.data;
+
+    let baseContrast, bright;
+    if(mode==='magic'){
+      baseContrast = 25 + intensity;    // stronger contrast
+      bright = 15;                       // a bit more white paper
+    }else if(mode==='bw'){
+      baseContrast = 30 + intensity;
+      bright = 15;
+    }else{ // strong
+      baseContrast = 40 + intensity;
+      bright = 20;
+    }
+
+    const c = (baseContrast/100)+1;
+    const intercept = 128*(1-c);
+
+    for(let i=0;i<d.length;i+=4){
+      let r=d[i], g=d[i+1], b=d[i+2];
+
+      // brightness/contrast
+      r = c*r + intercept + bright;
+      g = c*g + intercept + bright;
+      b = c*b + intercept + bright;
+
+      if(mode==='magic'){
+        // keep color but whiten paper & slightly bump saturation
+        const grey = 0.299*r + 0.587*g + 0.114*b;
+        // push light areas closer to white
+        if(grey>200){
+          const factor = Math.min(1,(grey-200)/55);
+          r = r + factor*(255-r);
+          g = g + factor*(255-g);
+          b = b + factor*(255-b);
+        }
+        // mild saturation boost
+        const satBoost = 0.25;
+        const g2 = 0.299*r + 0.587*g + 0.114*b;
+        r = g2 + (r-g2)*(1+satBoost);
+        g = g2 + (g-g2)*(1+satBoost);
+        b = g2 + (b-g2)*(1+satBoost);
+      }else{
+        // grayscale + threshold (B/W modes)
+        let grey = 0.299*r + 0.587*g + 0.114*b;
+        if(mode==='bw'){
+          grey = grey > 150+intensity ? 255 : 0;
+        }else{
+          grey = grey > 130+intensity ? 255 : 0;
+        }
+        r=g=b=grey;
+      }
+
+      d[i]=r; d[i+1]=g; d[i+2]=b;
+    }
+
+    // clamp
+    for(let i=0;i<d.length;i+=4){
+      d[i]=Math.max(0,Math.min(255,d[i]));
+      d[i+1]=Math.max(0,Math.min(255,d[i+1]));
+      d[i+2]=Math.max(0,Math.min(255,d[i+2]));
+    }
+
+    scanCtx.putImageData(imgData,0,0);
+  }
+
+  async function scanExportPdf(){
+    const status = document.getElementById('scan-status');
+    const link = document.getElementById('scan-download');
+    link.style.display='none';link.href='#';
+    if(!scanCanvas.width){
+      status.textContent='Please select a document photo first.';
+      status.className='status error';
+      return;
+    }
+    try{
+      status.textContent='Building scanned PDF...';
+      status.className='status';
+      const dataURL = scanCanvas.toDataURL('image/jpeg',0.85);
+      const bytes = dataURLToUint8Array(dataURL);
+      const pdfDoc = await PDFDocument.create();
+      const img = await pdfDoc.embedJpg(bytes);
+      const page = pdfDoc.addPage([img.width,img.height]);
+      page.drawImage(img,{x:0,y:0,width:img.width,height:img.height});
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes],{type:'application/pdf'});
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.style.display='inline-flex';
+      link.onclick = ()=>{ setTimeout(()=>URL.revokeObjectURL(url),2000); };
+      status.textContent = `Done. Estimated size: ${bytesToKB(blob.size)} KB`;
+      status.className = 'status success';
+    }catch(err){
+      console.error(err);
+      status.textContent='Scan export failed.';
+      status.className='status error';
+    }
+  }
 </script>
 </body>
 </html>
