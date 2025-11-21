@@ -1877,7 +1877,7 @@
       status.className='status error';
     }
   }
-    // ---------- 10. PHOTO ENHANCER (ADVANCED AI-STYLE) ----------
+      // ---------- 10. PHOTO ENHANCER (ADVANCED AI-STYLE, MOBILE SAFE) ----------
   let enhanceImg = null;
   let enhanceOriginalURL = null;
   const enhanceCanvas = document.getElementById('enhance-canvas');
@@ -1888,6 +1888,12 @@
   const enhanceOriginalImg = document.getElementById('enhance-original');
   const metaOriginal = document.getElementById('enhance-meta-original');
   const metaNew = document.getElementById('enhance-meta-new');
+
+  // Mobile detect → বড় image limit করে দেবো
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent) ||
+    window.innerWidth < 768;
+  const MAX_ENHANCE_DIM = isMobile ? 1400 : 2200; // longer side cap (px)
 
   // slider label updates
   document.getElementById('enhance-quality').addEventListener('input',(e)=>{
@@ -1917,9 +1923,12 @@
     enhanceOriginalURL = url;
     enhanceImg = await loadImageFromDataURL(url);
     enhanceOriginalImg.src = url;
+
+    // শুধু initial preview, real processing will use capped size
     enhanceCanvas.width = enhanceImg.width;
     enhanceCanvas.height = enhanceImg.height;
     enhanceCtx.drawImage(enhanceImg,0,0);
+
     metaOriginal.textContent = `Original: ${enhanceImg.width}×${enhanceImg.height}px`;
     enhanceStatus.textContent = 'Image loaded. Adjust sliders and click “Apply to current image”.';
     enhanceStatus.className = 'status';
@@ -1962,14 +1971,25 @@
     return out;
   }
 
-  // main enhancement pipeline on an HTMLImageElement
+  // main enhancement pipeline on an HTMLImageElement (OPTIMIZED)
   async function runEnhancementOnImage(img, opts){
     const {quality, noise, color, upscale, faceEnhance, restore} = opts;
 
-    // 1) upscale first (resolution upscaling)
-    const scale = Math.max(1, upscale || 1);
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
+    // ১) Upscale + size cap একসাথে
+    const userScale = Math.max(1, upscale || 1);
+    let w = img.width * userScale;
+    let h = img.height * userScale;
+
+    const longSide = Math.max(w, h);
+    if(longSide > MAX_ENHANCE_DIM){
+      const s = MAX_ENHANCE_DIM / longSide;
+      w = Math.round(w * s);
+      h = Math.round(h * s);
+    }
+
+    w = Math.max(1, Math.round(w));
+    h = Math.max(1, Math.round(h));
+
     enhanceCanvas.width = w;
     enhanceCanvas.height = h;
     enhanceCtx.imageSmoothingEnabled = true;
@@ -1979,21 +1999,23 @@
     let imgData = enhanceCtx.getImageData(0,0,w,h);
     const data = imgData.data;
     const original = new Uint8ClampedArray(data); // keep copy for noise/restore
-    const noiseStrength = Math.min(0.8, (noise||0)/100);
+
+    const qFactor = (quality||0)/100;
+    const colorFactor = (color||0)/100;
+    const noiseStrength = Math.min(0.7, (noise||0)/100);
+
+    // noise slider কম থাকলে blur skip → fast
     let blurred = null;
-    if(noiseStrength > 0){
+    if(noiseStrength > 0.18){
       blurred = blurImageData(original, w, h);
     }
 
-    // pre-calc ranges
-    const qFactor = (quality||0)/100;
-    const colorFactor = (color||0)/100;
+    // face area ellipse (soft region)
+    const faceCX = w / 2;
+    const faceCY = h * 0.45;
+    const faceRX = w * 0.3;
+    const faceRY = h * 0.45;
 
-   // face enhancement region = soft ellipse around center (no hard rectangle)
-const faceCX = w / 2;
-const faceCY = h * 0.45;   // little above exact center (joto tar matha area)
-const faceRX = w * 0.3;    // horizontal radius
-const faceRY = h * 0.45;   // vertical radius
     for(let y=0;y<h;y++){
       for(let x=0;x<w;x++){
         const i = (y*w + x)*4;
@@ -2009,9 +2031,9 @@ const faceRY = h * 0.45;   // vertical radius
           b = b*(1-noiseStrength) + blurred[i+2]*noiseStrength;
         }
 
-        // base quality: brightness + contrast + micro-sharpness
-        const bright = 10*qFactor;          // mild brighten
-        const contrast = 0.4*qFactor + 1;   // contrast multiplier
+        // base quality: brightness + contrast
+        const bright = 10*qFactor;
+        const contrast = 1 + 0.4*qFactor;
         r = r*contrast + bright;
         g = g*contrast + bright;
         b = b*contrast + bright;
@@ -2025,13 +2047,11 @@ const faceRY = h * 0.45;   // vertical radius
 
         // old-photo restoration
         if(restore){
-          // little extra contrast + de-yellow
           const restoreC = 1.1;
           r = (r-128)*restoreC + 128;
           g = (g-128)*restoreC + 128;
           b = (b-128)*restoreC + 128;
 
-          // reduce warm cast
           const avg = (r+g+b)/3;
           const warm = (r+g)/2;
           const cast = warm - avg;
@@ -2039,12 +2059,21 @@ const faceRY = h * 0.45;   // vertical radius
           g -= cast*0.2;
         }
 
-// face enhancement region = soft ellipse around center (no hard rectangle)
-const faceCX = w / 2;
-const faceCY = h * 0.45;   // little above exact center (joto tar matha area)
-const faceRX = w * 0.3;    // horizontal radius
-const faceRY = h * 0.45;   // vertical radius
-        // global clamp
+        // face enhancement (soft boost near center)
+        if(faceEnhance){
+          const dx = (x - faceCX)/faceRX;
+          const dy = (y - faceCY)/faceRY;
+          const dist = dx*dx + dy*dy;
+          if(dist < 1){
+            const t = 1 - dist;               // center = 1, edge = 0
+            const feC = 1 + 0.25*t*qFactor;   // extra contrast
+            const feB = 5*t*qFactor;         // extra brightness
+            r = (r-128)*feC + 128 + feB;
+            g = (g-128)*feC + 128 + feB;
+            b = (b-128)*feC + 128 + feB;
+          }
+        }
+
         data[i]   = Math.max(0,Math.min(255,r));
         data[i+1] = Math.max(0,Math.min(255,g));
         data[i+2] = Math.max(0,Math.min(255,b));
@@ -2052,12 +2081,13 @@ const faceRY = h * 0.45;   // vertical radius
       }
     }
 
-    // extra sharpening based on quality (unsharp mask style)
-    if(qFactor > 0.2){
-      const amount = qFactor*0.7;
+    // sharpening শুধু quality বেশি হলে
+    if(qFactor > 0.25){
+      const amount = qFactor*0.6;
       const src = new Uint8ClampedArray(data);
       const idx = (x,y)=>(y*w+x)*4;
       const k = [0,-1,0,-1,5,-1,0,-1,0];
+
       for(let y=1;y<h-1;y++){
         for(let x=1;x<w-1;x++){
           let rr=0,gg=0,bb=0,ki=0;
@@ -2076,6 +2106,7 @@ const faceRY = h * 0.45;   // vertical radius
           data[i4+2] = data[i4+2]*(1-amount) + bb*amount;
         }
       }
+      // clamp again
       for(let i=0;i<data.length;i+=4){
         data[i]   = Math.max(0,Math.min(255,data[i]));
         data[i+1] = Math.max(0,Math.min(255,data[i+1]));
@@ -2103,7 +2134,7 @@ const faceRY = h * 0.45;   // vertical radius
       alert('Please select a single image first.');
       return;
     }
-    enhanceStatus.textContent = 'Enhancing image...';
+    enhanceStatus.textContent = 'Enhancing image (mobile-safe mode)...';
     enhanceStatus.className = 'status';
     enhanceDownloadLink.style.display = 'none';
     metaNew.textContent = '';
@@ -2118,7 +2149,7 @@ const faceRY = h * 0.45;   // vertical radius
       }
       enhanceDownloadLink.href = url;
       enhanceDownloadLink.style.display = 'inline-flex';
-      metaNew.textContent = `Enhanced: ${w}×${h}px`;
+      metaNew.textContent = `Enhanced: ${w}×${h}px (preview-optimized)`;
       enhanceStatus.textContent = 'Done. Preview updated — you can download the enhanced image.';
       enhanceStatus.className = 'status success';
     }catch(err){
@@ -2142,7 +2173,7 @@ const faceRY = h * 0.45;   // vertical radius
     applyEnhanceSingle();
   }
 
-  // batch processing: apply same settings to many images
+  // batch processing: apply same settings to many images (also capped)
   async function enhanceBatch(){
     const input = document.getElementById('enhance-batch-input');
     const files = Array.from(input.files || []);
@@ -2151,7 +2182,7 @@ const faceRY = h * 0.45;   // vertical radius
       alert('Select one or more images in the “Batch images” field first.');
       return;
     }
-    enhanceStatus.textContent = `Enhancing ${files.length} image(s)... they will download one by one.`;
+    enhanceStatus.textContent = `Enhancing ${files.length} image(s)... they will download one by one. (Mobile-safe size)`;
     enhanceStatus.className = 'status';
 
     for(let i=0;i<files.length;i++){
@@ -2171,7 +2202,6 @@ const faceRY = h * 0.45;   // vertical radius
     enhanceStatus.textContent = 'Batch processing finished. Check your downloads folder.';
     enhanceStatus.className = 'status success';
   }
-
   // ---------- 11. ID PHOTO MAKER ----------
   let idImg=null;
   let idScale=1;
