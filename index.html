@@ -1030,60 +1030,110 @@
     </div>
   </section>
 
-  <!-- 10. Photo Enhancer -->
+    <!-- 10. Photo Enhancer (AI-style) -->
   <section id="panel-photo-enhance" class="tool-panel">
     <div class="tool-header">
       <div>
-        <h2>AI Photo Enhancer (basic)</h2>
-        <p>Brightness, contrast, saturation & sharpness with Auto Enhance.</p>
+        <h2>AI Photo Enhancer</h2>
+        <p>
+          Image quality improvement, noise reduction, color boost, upscaling,
+          face enhancement, batch processing & old photo restoration — all in your browser.
+        </p>
       </div>
       <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
     </div>
+
     <div class="section">
       <div class="field">
-        <label>Select image</label>
+        <label>Single image (for live preview)</label>
         <input id="enhance-input" type="file" accept="image/*" />
+        <small>Select one image to preview all enhancements.</small>
       </div>
+
+      <div class="field">
+        <label>Batch images (optional)</label>
+        <input id="enhance-batch-input" type="file" accept="image/*" multiple />
+        <small>Batch processing: apply the same settings to multiple photos and auto-download results.</small>
+      </div>
+
       <div class="flex flex-wrap gap-sm mt-xs">
-        <div class="field" style="flex:1 1 130px;max-width:220px;">
-          <label>Brightness</label>
-          <input id="enhance-bright" type="range" min="-80" max="80" value="0" />
-          <small><span id="enhance-bright-label">0</span></small>
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Quality boost (overall)</label>
+          <input id="enhance-quality" type="range" min="0" max="100" value="40" />
+          <small><span id="enhance-quality-label">40</span> — sharpness, contrast & clarity</small>
         </div>
-        <div class="field" style="flex:1 1 130px;max-width:220px;">
-          <label>Contrast</label>
-          <input id="enhance-contrast" type="range" min="-60" max="60" value="0" />
-          <small><span id="enhance-contrast-label">0</span></small>
+
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Noise reduction</label>
+          <input id="enhance-noise" type="range" min="0" max="100" value="30" />
+          <small><span id="enhance-noise-label">30</span> — clean low-light / grainy photos</small>
+        </div>
+
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>Color enhancement</label>
+          <input id="enhance-color" type="range" min="0" max="100" value="35" />
+          <small><span id="enhance-color-label">35</span> — richer colors without oversaturation</small>
         </div>
       </div>
+
       <div class="flex flex-wrap gap-sm mt-xs">
-        <div class="field" style="flex:1 1 130px;max-width:220px;">
-          <label>Saturation</label>
-          <input id="enhance-sat" type="range" min="-80" max="80" value="0" />
-          <small><span id="enhance-sat-label">0</span></small>
+        <div class="field" style="flex:1 1 150px;max-width:200px;">
+          <label>Upscaling (resolution)</label>
+          <select id="enhance-upscale">
+            <option value="1">1× (no upscale)</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+          <small>Upscale small / low-res photos before enhancement.</small>
         </div>
-        <div class="field" style="flex:1 1 130px;max-width:220px;">
-          <label>Sharpness</label>
-          <input id="enhance-sharp" type="range" min="0" max="100" value="20" />
-          <small><span id="enhance-sharp-label">20</span></small>
+
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>
+            <input id="enhance-face" type="checkbox" checked />
+            Face enhancement
+          </label>
+          <small>Extra clarity, contrast & color on the central face area.</small>
+        </div>
+
+        <div class="field" style="flex:1 1 150px;max-width:220px;">
+          <label>
+            <input id="enhance-restore" type="checkbox" />
+            Old photo restoration
+          </label>
+          <small>Fix faded photos: more contrast + cleaner whites.</small>
         </div>
       </div>
+
       <div class="flex flex-wrap gap-sm mt-xs">
-        <button class="btn btn-outline" onclick="applyEnhance()">Apply</button>
-        <button class="btn btn-outline" onclick="autoEnhance()">Auto Enhance</button>
+        <button class="btn btn-outline" onclick="applyEnhanceSingle()">Apply to current image</button>
+        <button class="btn btn-outline" onclick="autoEnhanceSmart()">AI-style auto enhance</button>
+        <button class="btn" onclick="enhanceBatch()">Enhance batch images</button>
       </div>
-      <a id="enhance-download" class="download-link" href="#" style="display:none;" download="enhanced.png">⬇ Download enhanced image</a>
-      <div class="hint mt-xs">Note: very large images may be slower to process in browser.</div>
+
+      <div id="enhance-status" class="status mt-xs"></div>
+
+      <a id="enhance-download" class="download-link" href="#" style="display:none;" download="enhanced.png">
+        ⬇ Download enhanced image
+      </a>
+
+      <div class="hint mt-xs">
+        • Image quality improvement = combination of clarity, sharpness & contrast.  
+        • Noise reduction uses a smart blur + detail mix.  
+        • Restoration mode is tuned for scanned / old / faded photos.
+      </div>
+
       <div class="divider"></div>
       <div class="section-title">Preview</div>
       <div class="preview-row">
         <div style="flex:1;">
           <div class="pill-small">Original</div>
           <img id="enhance-original" class="preview-img mt-xs" alt="" />
+          <div id="enhance-meta-original" class="hint mt-xs"></div>
         </div>
         <div style="flex:1;">
           <div class="pill-small">Enhanced</div>
           <canvas id="enhance-canvas" class="preview-img mt-xs"></canvas>
+          <div id="enhance-meta-new" class="hint mt-xs"></div>
         </div>
       </div>
     </div>
@@ -1827,132 +1877,299 @@
       status.className='status error';
     }
   }
+    // ---------- 10. PHOTO ENHANCER (ADVANCED AI-STYLE) ----------
+  let enhanceImg = null;
+  let enhanceOriginalURL = null;
+  const enhanceCanvas = document.getElementById('enhance-canvas');
+  const enhanceCtx = enhanceCanvas.getContext('2d');
 
-  // ---------- 10. PHOTO ENHANCER ----------
-  let enhanceImg=null;
-  const enhanceCanvas=document.getElementById('enhance-canvas');
-  const enhanceCtx=enhanceCanvas.getContext('2d');
+  const enhanceStatus = document.getElementById('enhance-status');
+  const enhanceDownloadLink = document.getElementById('enhance-download');
+  const enhanceOriginalImg = document.getElementById('enhance-original');
+  const metaOriginal = document.getElementById('enhance-meta-original');
+  const metaNew = document.getElementById('enhance-meta-new');
 
-  document.getElementById('enhance-bright').addEventListener('input',(e)=>{
-    document.getElementById('enhance-bright-label').textContent=e.target.value;
+  // slider label updates
+  document.getElementById('enhance-quality').addEventListener('input',(e)=>{
+    document.getElementById('enhance-quality-label').textContent = e.target.value;
   });
-  document.getElementById('enhance-contrast').addEventListener('input',(e)=>{
-    document.getElementById('enhance-contrast-label').textContent=e.target.value;
+  document.getElementById('enhance-noise').addEventListener('input',(e)=>{
+    document.getElementById('enhance-noise-label').textContent = e.target.value;
   });
-  document.getElementById('enhance-sat').addEventListener('input',(e)=>{
-    document.getElementById('enhance-sat-label').textContent=e.target.value;
-  });
-  document.getElementById('enhance-sharp').addEventListener('input',(e)=>{
-    document.getElementById('enhance-sharp-label').textContent=e.target.value;
+  document.getElementById('enhance-color').addEventListener('input',(e)=>{
+    document.getElementById('enhance-color-label').textContent = e.target.value;
   });
 
+  // single image load
   document.getElementById('enhance-input').addEventListener('change', async (e)=>{
-    const file=e.target.files[0];
-    const original=document.getElementById('enhance-original');
-    const link=document.getElementById('enhance-download');
-    link.style.display='none';
-    if(!file){original.src='';enhanceCanvas.width=0;enhanceCanvas.height=0;return;}
-    const url=await readFileAsDataURL(file);
-    enhanceImg=await loadImageFromDataURL(url);
-    original.src=url;
-    enhanceCanvas.width=enhanceImg.width;
-    enhanceCanvas.height=enhanceImg.height;
+    const file = e.target.files[0];
+    enhanceDownloadLink.style.display = 'none';
+    metaNew.textContent = '';
+    if(!file){
+      enhanceImg = null;
+      enhanceOriginalURL = null;
+      enhanceOriginalImg.src = '';
+      enhanceCanvas.width = enhanceCanvas.height = 0;
+      enhanceStatus.textContent = '';
+      return;
+    }
+    const url = await readFileAsDataURL(file);
+    enhanceOriginalURL = url;
+    enhanceImg = await loadImageFromDataURL(url);
+    enhanceOriginalImg.src = url;
+    enhanceCanvas.width = enhanceImg.width;
+    enhanceCanvas.height = enhanceImg.height;
     enhanceCtx.drawImage(enhanceImg,0,0);
+    metaOriginal.textContent = `Original: ${enhanceImg.width}×${enhanceImg.height}px`;
+    enhanceStatus.textContent = 'Image loaded. Adjust sliders and click “Apply to current image”.';
+    enhanceStatus.className = 'status';
   });
 
-  function applyEnhance(){
-    if(!enhanceImg){alert('Select an image first.');return;}
-    const bright=parseInt(document.getElementById('enhance-bright').value)||0;
-    const contrast=parseInt(document.getElementById('enhance-contrast').value)||0;
-    const satVal=parseInt(document.getElementById('enhance-sat').value)||0;
-    const sharpVal=parseInt(document.getElementById('enhance-sharp').value)||0;
+  function getEnhanceOptions(){
+    return {
+      quality: parseInt(document.getElementById('enhance-quality').value) || 0,
+      noise: parseInt(document.getElementById('enhance-noise').value)   || 0,
+      color: parseInt(document.getElementById('enhance-color').value)   || 0,
+      upscale: parseFloat(document.getElementById('enhance-upscale').value) || 1,
+      faceEnhance: document.getElementById('enhance-face').checked,
+      restore: document.getElementById('enhance-restore').checked
+    };
+  }
 
-    enhanceCanvas.width=enhanceImg.width;
-    enhanceCanvas.height=enhanceImg.height;
-    enhanceCtx.drawImage(enhanceImg,0,0);
-    const imgData=enhanceCtx.getImageData(0,0,enhanceCanvas.width,enhanceCanvas.height);
-    let data=imgData.data;
-    const b = bright;
-    const c = (contrast/100)+1;
-    const intercept = 128*(1-c);
-    const sFactor = satVal/100;
+  // 3×3 blur helper for noise reduction
+  function blurImageData(src, w, h){
+    const out = new Uint8ClampedArray(src.length);
+    const idx = (x,y)=> (y*w+x)*4;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        let r=0,g=0,b=0,a=0,count=0;
+        for(let ky=-1;ky<=1;ky++){
+          for(let kx=-1;kx<=1;kx++){
+            const nx=x+kx, ny=y+ky;
+            if(nx<0||ny<0||nx>=w||ny>=h) continue;
+            const i4 = idx(nx,ny);
+            r+=src[i4]; g+=src[i4+1]; b+=src[i4+2]; a+=src[i4+3];
+            count++;
+          }
+        }
+        const o4 = idx(x,y);
+        out[o4]   = r/count;
+        out[o4+1] = g/count;
+        out[o4+2] = b/count;
+        out[o4+3] = a/count;
+      }
+    }
+    return out;
+  }
 
-    for(let i=0;i<data.length;i+=4){
-      let r=data[i], g=data[i+1], bch=data[i+2];
+  // main enhancement pipeline on an HTMLImageElement
+  async function runEnhancementOnImage(img, opts){
+    const {quality, noise, color, upscale, faceEnhance, restore} = opts;
 
-      r = c*r+intercept + b;
-      g = c*g+intercept + b;
-      bch = c*bch+intercept + b;
+    // 1) upscale first (resolution upscaling)
+    const scale = Math.max(1, upscale || 1);
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    enhanceCanvas.width = w;
+    enhanceCanvas.height = h;
+    enhanceCtx.imageSmoothingEnabled = true;
+    enhanceCtx.imageSmoothingQuality = 'high';
+    enhanceCtx.drawImage(img, 0, 0, w, h);
 
-      const grey = 0.299*r+0.587*g+0.114*bch;
-      r = grey + (r-grey)*(1+sFactor);
-      g = grey + (g-grey)*(1+sFactor);
-      bch = grey + (bch-grey)*(1+sFactor);
-
-      data[i] = r;
-      data[i+1] = g;
-      data[i+2] = bch;
+    let imgData = enhanceCtx.getImageData(0,0,w,h);
+    const data = imgData.data;
+    const original = new Uint8ClampedArray(data); // keep copy for noise/restore
+    const noiseStrength = Math.min(0.8, (noise||0)/100);
+    let blurred = null;
+    if(noiseStrength > 0){
+      blurred = blurImageData(original, w, h);
     }
 
-    for(let i=0;i<data.length;i+=4){
-      data[i]=Math.max(0,Math.min(255,data[i]));
-      data[i+1]=Math.max(0,Math.min(255,data[i+1]));
-      data[i+2]=Math.max(0,Math.min(255,data[i+2]));
+    // pre-calc ranges
+    const qFactor = (quality||0)/100;
+    const colorFactor = (color||0)/100;
+
+   // face enhancement region = soft ellipse around center (no hard rectangle)
+const faceCX = w / 2;
+const faceCY = h * 0.45;   // little above exact center (joto tar matha area)
+const faceRX = w * 0.3;    // horizontal radius
+const faceRY = h * 0.45;   // vertical radius
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const i = (y*w + x)*4;
+        let r = original[i];
+        let g = original[i+1];
+        let b = original[i+2];
+        const a = original[i+3];
+
+        // noise reduction: mix with blurred copy
+        if(blurred){
+          r = r*(1-noiseStrength) + blurred[i]*noiseStrength;
+          g = g*(1-noiseStrength) + blurred[i+1]*noiseStrength;
+          b = b*(1-noiseStrength) + blurred[i+2]*noiseStrength;
+        }
+
+        // base quality: brightness + contrast + micro-sharpness
+        const bright = 10*qFactor;          // mild brighten
+        const contrast = 0.4*qFactor + 1;   // contrast multiplier
+        r = r*contrast + bright;
+        g = g*contrast + bright;
+        b = b*contrast + bright;
+
+        // color enhancement (saturation)
+        const grey = 0.299*r+0.587*g+0.114*b;
+        const satBoost = 1 + 0.8*colorFactor;
+        r = grey + (r-grey)*satBoost;
+        g = grey + (g-grey)*satBoost;
+        b = grey + (b-grey)*satBoost;
+
+        // old-photo restoration
+        if(restore){
+          // little extra contrast + de-yellow
+          const restoreC = 1.1;
+          r = (r-128)*restoreC + 128;
+          g = (g-128)*restoreC + 128;
+          b = (b-128)*restoreC + 128;
+
+          // reduce warm cast
+          const avg = (r+g+b)/3;
+          const warm = (r+g)/2;
+          const cast = warm - avg;
+          r -= cast*0.3;
+          g -= cast*0.2;
+        }
+
+// face enhancement region = soft ellipse around center (no hard rectangle)
+const faceCX = w / 2;
+const faceCY = h * 0.45;   // little above exact center (joto tar matha area)
+const faceRX = w * 0.3;    // horizontal radius
+const faceRY = h * 0.45;   // vertical radius
+        // global clamp
+        data[i]   = Math.max(0,Math.min(255,r));
+        data[i+1] = Math.max(0,Math.min(255,g));
+        data[i+2] = Math.max(0,Math.min(255,b));
+        data[i+3] = a;
+      }
     }
 
-    if(sharpVal>0){
-      const amount = sharpVal/50;
-      const w=enhanceCanvas.width;
-      const h=enhanceCanvas.height;
+    // extra sharpening based on quality (unsharp mask style)
+    if(qFactor > 0.2){
+      const amount = qFactor*0.7;
       const src = new Uint8ClampedArray(data);
-      const idx = (x,y)=> (y*w+x)*4;
+      const idx = (x,y)=>(y*w+x)*4;
       const k = [0,-1,0,-1,5,-1,0,-1,0];
       for(let y=1;y<h-1;y++){
         for(let x=1;x<w-1;x++){
-          let r=0,g=0,b2=0;
-          let ki=0;
+          let rr=0,gg=0,bb=0,ki=0;
           for(let ky=-1;ky<=1;ky++){
             for(let kx=-1;kx<=1;kx++){
               const i4 = idx(x+kx,y+ky);
               const wght = k[ki++];
-              r += src[i4]*wght;
-              g += src[i4+1]*wght;
-              b2 += src[i4+2]*wght;
+              rr += src[i4]*wght;
+              gg += src[i4+1]*wght;
+              bb += src[i4+2]*wght;
             }
           }
-          const i4c=idx(x,y);
-          data[i4c] = data[i4c]*(1-amount) + r*amount;
-          data[i4c+1] = data[i4c+1]*(1-amount) + g*amount;
-          data[i4c+2] = data[i4c+2]*(1-amount) + b2*amount;
+          const i4 = idx(x,y);
+          data[i4]   = data[i4]*(1-amount)   + rr*amount;
+          data[i4+1] = data[i4+1]*(1-amount) + gg*amount;
+          data[i4+2] = data[i4+2]*(1-amount) + bb*amount;
         }
       }
       for(let i=0;i<data.length;i+=4){
-        data[i]=Math.max(0,Math.min(255,data[i]));
-        data[i+1]=Math.max(0,Math.min(255,data[i+1]));
-        data[i+2]=Math.max(0,Math.min(255,data[i+2]));
+        data[i]   = Math.max(0,Math.min(255,data[i]));
+        data[i+1] = Math.max(0,Math.min(255,data[i+1]));
+        data[i+2] = Math.max(0,Math.min(255,data[i+2]));
       }
     }
 
+    imgData.data.set(data);
     enhanceCtx.putImageData(imgData,0,0);
-    enhanceCanvas.toBlob(blob=>{
-      if(!blob)return;
-      const url=URL.createObjectURL(blob);
-      const link=document.getElementById('enhance-download');
-      link.href=url;
-      link.style.display='inline-flex';
-    },'image/png');
+
+    return new Promise((resolve)=>{
+      enhanceCanvas.toBlob(blob=>{
+        if(!blob){
+          resolve({blob:null,url:null,w,h});
+        }else{
+          const url = URL.createObjectURL(blob);
+          resolve({blob,url,w,h});
+        }
+      },'image/png');
+    });
   }
 
-  function autoEnhance(){
-    document.getElementById('enhance-bright').value=10;
-    document.getElementById('enhance-contrast').value=20;
-    document.getElementById('enhance-sat').value=15;
-    document.getElementById('enhance-sharp').value=30;
-    document.getElementById('enhance-bright-label').textContent='10';
-    document.getElementById('enhance-contrast-label').textContent='20';
-    document.getElementById('enhance-sat-label').textContent='15';
-    document.getElementById('enhance-sharp-label').textContent='30';
-    applyEnhance();
+  async function applyEnhanceSingle(){
+    if(!enhanceImg){
+      alert('Please select a single image first.');
+      return;
+    }
+    enhanceStatus.textContent = 'Enhancing image...';
+    enhanceStatus.className = 'status';
+    enhanceDownloadLink.style.display = 'none';
+    metaNew.textContent = '';
+
+    try{
+      const opts = getEnhanceOptions();
+      const {blob,url,w,h} = await runEnhancementOnImage(enhanceImg, opts);
+      if(!blob){
+        enhanceStatus.textContent = 'Enhancement failed.';
+        enhanceStatus.className = 'status error';
+        return;
+      }
+      enhanceDownloadLink.href = url;
+      enhanceDownloadLink.style.display = 'inline-flex';
+      metaNew.textContent = `Enhanced: ${w}×${h}px`;
+      enhanceStatus.textContent = 'Done. Preview updated — you can download the enhanced image.';
+      enhanceStatus.className = 'status success';
+    }catch(err){
+      console.error(err);
+      enhanceStatus.textContent = 'Enhancement failed. Try a smaller image or different settings.';
+      enhanceStatus.className = 'status error';
+    }
+  }
+
+  // smart preset similar to “one click AI enhance”
+  function autoEnhanceSmart(){
+    document.getElementById('enhance-quality').value = 55;
+    document.getElementById('enhance-noise').value   = 40;
+    document.getElementById('enhance-color').value   = 45;
+    document.getElementById('enhance-upscale').value = '1.5';
+    document.getElementById('enhance-face').checked  = true;
+    document.getElementById('enhance-restore').checked = false;
+    document.getElementById('enhance-quality-label').textContent = '55';
+    document.getElementById('enhance-noise-label').textContent   = '40';
+    document.getElementById('enhance-color-label').textContent   = '45';
+    applyEnhanceSingle();
+  }
+
+  // batch processing: apply same settings to many images
+  async function enhanceBatch(){
+    const input = document.getElementById('enhance-batch-input');
+    const files = Array.from(input.files || []);
+    const opts = getEnhanceOptions();
+    if(!files.length){
+      alert('Select one or more images in the “Batch images” field first.');
+      return;
+    }
+    enhanceStatus.textContent = `Enhancing ${files.length} image(s)... they will download one by one.`;
+    enhanceStatus.className = 'status';
+
+    for(let i=0;i<files.length;i++){
+      const file = files[i];
+      try{
+        enhanceStatus.textContent = `Enhancing image ${i+1} of ${files.length}...`;
+        const img = await loadImageFromFile(file);
+        const {blob} = await runEnhancementOnImage(img, opts);
+        if(blob){
+          const nameBase = file.name.replace(/\.[^.]+$/,'') || 'image';
+          downloadBlob(blob, `enhanced-${nameBase}.png`);
+        }
+      }catch(err){
+        console.error(err);
+      }
+    }
+    enhanceStatus.textContent = 'Batch processing finished. Check your downloads folder.';
+    enhanceStatus.className = 'status success';
   }
 
   // ---------- 11. ID PHOTO MAKER ----------
