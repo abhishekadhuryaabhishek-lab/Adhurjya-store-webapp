@@ -663,6 +663,16 @@
       </div>
 
       <div class="tool-card">
+        <h3>Photo / PDF → Excel</h3>
+        <p>Table-style text extract করে CSV বানাও – marksheet, attendance, expense ইত্যাদি জন্য।</p>
+        <div class="tool-tags">
+          <span class="tool-tag">OCR</span>
+          <span class="tool-tag">Table → CSV</span>
+        </div>
+        <button class="btn" onclick="openTool('photo-excel')">Open Tool</button>
+      </div>
+
+      <div class="tool-card">
         <h3>Image to Text (OCR)</h3>
         <p>Extract text from images or PDFs using Tesseract.js — English + Hindi/Bengali.</p>
         <div class="tool-tags">
@@ -1134,6 +1144,63 @@
           <div class="pill-small">Enhanced</div>
           <canvas id="enhance-canvas" class="preview-img mt-xs"></canvas>
           <div id="enhance-meta-new" class="hint mt-xs"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. Photo / PDF → Table → CSV (Photo to Excel lite) -->
+  <section id="panel-photo-excel" class="tool-panel">
+    <div class="tool-header">
+      <div>
+        <h2>Photo / PDF → Excel (Table OCR)</h2>
+        <p>Marksheet, attendance, expense table photo/PDF থেকে data নিয়ে CSV বানাও (Excel open করবে).</p>
+      </div>
+      <button class="btn btn-outline" onclick="goHome()">← Back to tools</button>
+    </div>
+
+    <div class="section">
+      <div class="field">
+        <label>Select image or PDF (with table)</label>
+        <input id="photoExcel-input" type="file" accept="image/*,application/pdf" />
+        <small>Clear table photo/PDF ব্যবহার করলে best result পাবা.</small>
+      </div>
+
+      <div class="field">
+        <label>Language</label>
+        <select id="photoExcel-lang">
+          <option value="eng">English (eng)</option>
+          <option value="hin">Hindi (hin)</option>
+          <option value="ben">Bengali (ben)</option>
+        </select>
+        <small>Hindi/Bengali এর জন্য প্রথমবার internet লাগতে পারে (Tesseract language data).</small>
+      </div>
+
+      <div class="field">
+        <label>Column detection mode</label>
+        <select id="photoExcel-split-mode">
+          <option value="auto">Auto: 2+ space / tab / | দিয়ে column detect</option>
+        </select>
+        <small>Plain table হলেই কাজ করবে. এটা lite version – heavy complex table-এর জন্য perfect না.</small>
+      </div>
+
+      <button class="btn mt-sm" onclick="runPhotoExcel()">Run Table OCR & Build CSV</button>
+
+      <div id="photoExcel-status" class="status mt-xs"></div>
+
+      <div class="section mt-md">
+        <div class="section-title">Raw OCR text (debug)</div>
+        <textarea id="photoExcel-raw" placeholder="Here you can see raw OCR text, line by line."></textarea>
+      </div>
+
+      <div class="section mt-md">
+        <div class="section-title">Preview CSV (Excel format)</div>
+        <textarea id="photoExcel-csv" placeholder="Table → CSV preview here."></textarea>
+        <a id="photoExcel-download" class="download-link" href="#" style="display:none;" download="table.csv">
+          ⬇ Download CSV (Open in Excel)
+        </a>
+        <div class="hint mt-xs">
+          CSV file directly Excel / Google Sheets এ খুলে যাবে.
         </div>
       </div>
     </div>
@@ -2201,6 +2268,187 @@
     }
     enhanceStatus.textContent = 'Batch processing finished. Check your downloads folder.';
     enhanceStatus.className = 'status success';
+  }
+  // ---------- 12. PHOTO / PDF → TABLE → CSV (Photo to Excel lite) ----------
+  let photoExcelCsvUrl = null;
+
+  function buildCsvFromPlainText(text){
+    // 1) split into lines, empty line বাদ
+    const lines = text
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+
+    const rows = [];
+
+    for(const line of lines){
+      let cells = [];
+
+      if (line.includes('\t')) {
+        // tab-separated
+        cells = line.split(/\t+/);
+      } else if (line.includes('|')) {
+        // pipe-separated tables (A | B | C)
+        cells = line.split(/\s*\|\s*/);
+      } else {
+        // default: 2+ space → column
+        cells = line.split(/\s{2,}/);
+      }
+
+      cells = cells.map(c => c.trim()).filter(c => c.length > 0);
+      if(!cells.length) continue;
+
+      // CSV escaping: quote if comma / quote / newline
+      const csvCells = cells.map(c=>{
+        if(/[",\r\n]/.test(c)){
+          return '"' + c.replace(/"/g,'""') + '"';
+        }
+        return c;
+      });
+
+      rows.push(csvCells.join(','));
+    }
+
+    return rows.join('\r\n');
+  }
+
+  async function runPhotoExcel(){
+    const input = document.getElementById('photoExcel-input');
+    const file = input.files[0];
+    const lang = document.getElementById('photoExcel-lang').value;
+    const status = document.getElementById('photoExcel-status');
+    const rawOut = document.getElementById('photoExcel-raw');
+    const csvOut = document.getElementById('photoExcel-csv');
+    const link = document.getElementById('photoExcel-download');
+
+    rawOut.value = '';
+    csvOut.value = '';
+    link.style.display = 'none';
+    link.href = '#';
+
+    if(photoExcelCsvUrl){
+      URL.revokeObjectURL(photoExcelCsvUrl);
+      photoExcelCsvUrl = null;
+    }
+
+    if(!file){
+      status.textContent = 'Please select an image or PDF first.';
+      status.className = 'status error';
+      return;
+    }
+
+    status.textContent = 'Preparing OCR...';
+    status.className = 'status';
+
+    const T = window.Tesseract;
+
+    try{
+      let fullText = '';
+
+      if(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')){
+        // ---- PDF TABLE OCR ----
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+        const totalPages = pdf.numPages;
+
+        for(let pageNum=1; pageNum<=totalPages; pageNum++){
+          const page = await pdf.getPage(pageNum);
+
+          // একটু higher DPI = better OCR
+          const viewport = page.getViewport({scale: 2.0});
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({canvasContext:ctx,viewport}).promise;
+
+          status.textContent = `Running OCR on page ${pageNum} of ${totalPages}...`;
+
+          const result = await T.recognize(canvas, lang, {
+            logger: m => {
+              if(m.status === 'recognizing text' && m.progress){
+                status.textContent = `Page ${pageNum}/${totalPages} – ${(m.progress*100).toFixed(0)}%`;
+              }
+            }
+          });
+
+          const pageText = (result.data.text || '').trim();
+          if(pageText.length){
+            fullText += (fullText ? '\n\n' : '') + pageText;
+          }
+        }
+      }else{
+        // ---- IMAGE TABLE OCR ----
+        const dataURL = await readFileAsDataURL(file);
+        const img = await loadImageFromDataURL(dataURL);
+
+        // একটু preprocess: grayscale + slight contrast
+        const maxDim = 1800;
+        const needScale = maxDim / Math.max(img.width, img.height);
+        const scale = needScale < 1 ? needScale : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = w; canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+
+        let imgData = ctx.getImageData(0,0,w,h);
+        let d = imgData.data;
+        const c = 1.2;
+        const intercept = 128*(1-c);
+        for(let i=0;i<d.length;i+=4){
+          let r=d[i], g=d[i+1], b=d[i+2];
+          let grey = 0.299*r+0.587*g+0.114*b;
+          grey = c*grey + intercept + 5;
+          grey = Math.max(0,Math.min(255,grey));
+          d[i]=d[i+1]=d[i+2]=grey;
+        }
+        ctx.putImageData(imgData,0,0);
+
+        status.textContent = 'Running OCR on image table...';
+
+        const result = await T.recognize(canvas, lang, {
+          logger: m => {
+            if(m.status === 'recognizing text' && m.progress){
+              status.textContent = `Recognizing text – ${(m.progress*100).toFixed(0)}%`;
+            }
+          }
+        });
+
+        fullText = (result.data.text || '').trim();
+      }
+
+      if(!fullText){
+        status.textContent = 'No text detected. Try a clearer scan or higher quality image.';
+        status.className = 'status error';
+        return;
+      }
+
+      rawOut.value = fullText;
+
+      // Build CSV from OCR text
+      const csv = buildCsvFromPlainText(fullText);
+      csvOut.value = csv || '# No table-like structure detected.\n';
+
+      if(csv && csv.trim().length){
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        photoExcelCsvUrl = URL.createObjectURL(blob);
+        link.href = photoExcelCsvUrl;
+        link.style.display = 'inline-flex';
+        status.textContent = 'Done. Check CSV preview and download for Excel.';
+        status.className = 'status success';
+      }else{
+        status.textContent = 'OCR done, but could not detect clear table columns. You can still copy raw text.';
+        status.className = 'status';
+      }
+
+    }catch(err){
+      console.error(err);
+      status.textContent = 'Table OCR failed. Try a clearer table or different language.';
+      status.className = 'status error';
+    }
   }
   // ---------- 11. ID PHOTO MAKER ----------
   let idImg=null;
